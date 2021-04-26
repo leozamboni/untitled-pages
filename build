@@ -1,0 +1,457 @@
+#!/usr/bin/env bash
+#
+# Copyright (C) 2017,2021 Leah Rowe <info@minifree.org>
+# Copyright (C) 2017 Alyssa Rosenzweig <alyssa@rosenzweig.io>
+# Copyright (C) 2017 Michael Reed <michael@michaelreed.io>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+[ "x${DEBUG+set}" = 'xset' ] && set -v
+set -e
+
+# usage: title file
+title() {
+	firstchar=$(head -c 1 ${1})
+	outputstring=""
+	if [[ "${firstchar}" == "%" ]]; then
+		outputstring="$(sed -n 1p "${1}" | sed -e s-^..--)"
+	else
+		outputstring="$(sed -n 2p "${1}" | sed -e s-^..--)"
+		outputstring="${outputstring#* }"
+	fi
+	printf "%s\n" "${outputstring}"
+	return 0
+}
+
+# usage: meta file
+meta() {
+	file="${1}"
+	SITEDIR="${2}"
+	BLOGDIR="${3}"
+	htmlfile=$(printf '%s\n' "${file%.md}.html")
+
+	printf '%s\n' "[$(title "${SITEDIR}/site/${BLOGDIR}${file}")](/${BLOGDIR}${file}){.title}"
+	printf '%s\n' "[$(sed -n 3p "${SITEDIR}/site/${BLOGDIR}${file}" | sed -e s-^..--)]{.date}"
+	# printf '\n'
+	# tail -n +5 "${SITEDIR}/news/${file}" | perl -p0e 's/(\.|\?|\!)( |\n)(.|\n)*/.../g'
+	# todo: make this configurable via enable/disable, and make it less cursed
+
+	printf '\n'
+	printf '\n'
+}
+
+# usage: rss_header
+rss_header() {
+	BLOGTITLE="${1}"
+	DOMAIN="${2}" # without a / at the end, but with http:// or https://
+	BLOGDESCRIPTION="${3}"
+	BLOGDIR="${4}"
+
+	printf '%s\n' '<rss version="2.0">'
+	printf '%s\n' '<channel>'
+
+	printf '%s\n' "<title>${BLOGTITLE}</title>"
+	printf '%s\n' "<link>${DOMAIN}${BLOGDIR}</link>"
+	printf '%s\n' "<description>$BLOGDESCRIPTION</description>"
+}
+
+# usage: rss_main file
+rss_main() {
+	file="${1}"
+	SITEDIR="${2}"
+	DOMAIN="${3}"
+	BLOGDIR="${4}"
+
+	# render content and escape
+	htmlfile="${file%.md}.html"
+
+	printf '%s\n' '<item>'
+	printf '%s\n' "<title>$(title "${SITEDIR}/site/${BLOGDIR}${file}")</title>"
+	printf '%s\n' "<link>${DOMAIN}${BLOGDIR}${htmlfile}</link>"
+	printf '%s\n' "<description>$(pandoc "${SITEDIR}/site/${BLOGDIR}${file}")</description>"
+	printf '%s\n' '</item>'
+}
+
+# usage: rss_footer
+rss_footer() {
+	printf '%s\n' '</channel>'
+	printf '%s\n' '</rss>'
+}
+
+# convert pandoc-markdown file into html, using a template file
+mkhtml() {
+	FILE=${1%.md}
+	SITEDIR="www/${2}"
+	TITLE="${3}"
+	CSS="${4}"
+
+	if [ -f "${SITEDIR}/site/template.include" ]; then
+		TEMPLATE="${SITEDIR}/site/template.include"
+	else
+		printf "mkhtml: no template.include file in %s\n" "${SITEDIR}"
+		exit 1
+	fi
+
+	TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
+
+	firstchar=$(head -c 1 ${1})
+	if [[ "${firstchar}" == "%" ]]; then
+		TMPFILE2=$(mktemp -t untitled_www.XXXXXXXXXX)
+
+		title="$(head -n3 ${1})"
+		printf "%s\n" "${title}" > $TMPFILE2
+		chunk="$(head -n1 $TMPFILE2)"
+
+		chunk="$(tail -n+2 $TMPFILE2)"
+		printf "%s\n" "${chunk}" > $TMPFILE2
+		author="$(head -n1 $TMPFILE2)"
+
+		chunk="$(tail -n+2 $TMPFILE2)"
+		printf "%s\n" "${chunk}" > $TMPFILE2
+		date="$(head -n1 $TMPFILE2)"
+
+		rm -f "$TMPFILE2"
+
+		pagetext="$(tail -n+4 ${1})"
+	else
+		title="$(head -n4 ${1})"
+		author=""
+		date=""
+		pagetext="$(tail -n+5 ${1})"
+	fi
+
+	printf "%s\n" "${title}" > "$TMPFILE"
+
+	# Certain overrides are possible for a given page, and translations
+	# of a page are considered to be the same page
+	LANG="${FILE##*.}"
+	if [ "${LANG}" = "${FILE}" ]; then
+		LANG="en"
+	else
+		FILE="${FILE%.*}"
+	fi
+
+	# This is the URI but without any extension, *and without language
+	# extension*. This will be used extensively, especially for backlinks
+	URI="${FILE##${SITEDIR}/site}" # without file extension e.g. .html
+
+	# Allow a given page to override the default navigation menu
+	if [ -f "${FILE}.nav" ]; then
+		printf "\n<div class='nav'>\n" >> "$TMPFILE"
+		cat "${FILE}.nav" >> "$TMPFILE"
+		printf "\n</div>" >> "$TMPFILE"
+	elif [ -f "${SITEDIR}/site/nav.include" ]; then
+		printf "\n<div class='nav'>\n" >> "$TMPFILE"
+		cat "${SITEDIR}/site/nav.include" >> "$TMPFILE"
+		printf "\n</div>\n" >> "$TMPFILE"
+	fi
+
+	if [ "${author}" != "" ] && [ "${date}" != "" ]; then
+		printf "\nNews article published on %s by %s. [Return to index](./)\n" "${date#% }" "${author#% }" >> "$TMPFILE"
+	else
+		if [ "${URI}" != "/index" ]; then
+			if [ "${URI##*/}" = "index" ]; then
+				printf "\n[Return to previous index](../)\n" >> "${TMPFILE}"
+			else
+				printf "\n[Return to index](./)\n" >> "${TMPFILE}"
+			fi
+		fi
+	fi
+
+
+	printf "\n%s\n" "${pagetext}" >> "$TMPFILE"
+
+	# Allow a given page to override the default CSS stylesheet
+	# NOTE: If a default CSS stylesheet is given, it's still applied and
+	# the override one is applied after that. That way, CSS can be properly
+	# overridden
+	CSSOVERRIDE=""
+	if [ -f "${FILE}.css" ]; then
+		CSSOVERRIDE="--css ${URI}.css"
+	fi
+
+	# Allow a given page to override the default template
+	if [ -f "${FILE}.template" ]; then
+		TEMPLATE="${FILE}.template"
+	fi
+
+	# Allow a given page to override the default footer
+	if [ -f "${FILE}.footer" ]; then
+		printf "\n<div id='footer'>\n" >> "${TMPFILE}" >> "${TMPFILE}"
+		cat "${FILE}.footer" >> "${TMPFILE}"
+		printf "\n</div>\n" >> "${TMPFILE}"
+	elif [ -f "${SITEDIR}/site/footer.include" ]; then
+		printf "\n<div id='footer'>\n" >> "${TMPFILE}" >> "${TMPFILE}"
+		cat "${SITEDIR}/site/footer.include" >> "${TMPFILE}"
+		printf "\n</div>\n" >> "${TMPFILE}"
+	fi
+
+	if [ "${LANG}" != "en" ]; then
+		FILE="${FILE}.${LANG}"
+		URI="${URI}.${LANG}"
+	fi
+
+	printf "\nMarkdown file for this page: <%s%s.md>\n" "${DOMAIN}" "${URI##/}" >> "$TMPFILE"
+
+	if [ -f "${SITEDIR}/site/feed.xml" ]; then
+		printf "\n[Subscribe to RSS for this site](/feed.xml)\n" >> "${TMPFILE}"
+	fi
+
+	if [ -f "${SITEDIR}/site/sitemap.md" ]; then
+		printf "\n[Site map](/sitemap.md)\n" >> "${TMPFILE}"
+	fi
+
+	printf "\nThis HTML page was generated by [untitled static site generator, not yet released](https://untitled.vimuser.org/).\n" >> "${TMPFILE}"
+
+	# change out .md -> .html
+	# but not for external links
+	# TODO: fix bug: just ".md" written on a page will still be converted
+	# (which means that it's not possible to talk about .md file extensions)
+	sed -i -e '/\/\//!{s/\.md\(#[a-zA-Z0-9_-]*\)\?\([])]*\)/.html\1\2/g}' "$TMPFILE"
+
+	# TOC is always enabled on news pages
+	TOC=$(grep -q "^x-toc-enable: true$" "$TMPFILE" && printf '%s\n' "--toc --toc-depth=4") || TOC=""
+	if [ -f "${FILE%/*}/MANIFEST" ]; then
+		TOC="--toc --toc-depth=4"
+	fi
+
+	# work around heterogenous pandoc versions
+	SMART=$(pandoc -v | grep -q '2\.0' || printf '%s\n' "-f markdown+smart -t html") || SMART=""
+
+	if [ "${LANG}" = "ar" ] || [ "${LANG}" = "he" ]; then
+		PDIR="rtl"
+	else
+		PDIR="ltr"
+	fi
+
+	# chuck through pandoc
+	#
+	# $CSS must not be quoted, otherwise pandoc interprets '--css /headercenter.css'
+	# as one argument, when it is actually two.
+	# Same for $TITLE
+	pandoc -V lang=${LANG} -V dir=${PDIR} $TOC $SMART "$TMPFILE" \
+		-s ${CSS} ${CSSOVERRIDE} ${TITLE} \
+		--template ${TEMPLATE} --metadata return="" > "$FILE.html"
+
+	# generate section title anchors as [link]
+	sed -i -e 's_^<h\([123]\) id="\(.*\)">\(.*\)</h\1>_<div class="h"><h\1 id="\2">\3</h\1><a aria-hidden="true" href="#\2">[link]</a></div>_' "$FILE.html"
+
+	# clean up temporary file
+	rm -f "$TMPFILE"
+}
+
+getConfigValue() {
+	CONFIGFILE="${1}" # e.g. www/foo/site.cfg
+	ITEM="${2}" # e.g. TITLE
+	TMPCFG=$(mktemp -t untitled_www.XXXXXXXXXX)
+	grep "${ITEM}" "${CONFIGFILE}" > "${TMPCFG}"
+	VALUE="$(head -n1 $TMPCFG)"
+	VALUE="${VALUE##*$ITEM=\"}"
+	VALUE="${VALUE%\"*}"
+	printf "%s\n" "${VALUE}"
+	rm -f "${TMPCFG}"
+}
+
+# ensure that it's just a file name, no directories specified
+# if the path includes directories, it just means that this will be mangled.
+# code that uses this function is: mostly the mknews function
+# should be safe
+sanitizefilename() {
+	page="${1##*/}"
+	page="${page%/}" # avoid refering to directory
+	page="$(printf "%s\n" "${1}" | sed -e 's/\ //g')"
+	page="$(printf "%s\n" "${1}" | sed -e 's/\.\.//g')"
+	printf "${page}\n"
+}
+
+mknews() {
+	SITEDIR="${1}"
+	SITENAME="${2}"
+	BLOGDIR="${3}"
+	DOMAIN="${4}"
+
+	#if [ -f "${SITEDIR}/site/${BLOGDIR}MANIFEST" ]; then
+
+	for MANIFEST in $(find -L "${SITEDIR}/site/" -type f -name "MANIFEST"); do
+
+		if [ ! -f "${MANIFEST}" ]; then continue; fi
+
+		BLOGTITLE="News"
+		BLOGDESCRIPTION="News"
+		MANIFESTDIR="${MANIFEST##${SITEDIR}/site/}"
+		MANIFESTDIR="${MANIFESTDIR%MANIFEST}"
+		if [ -f "${SITEDIR}/site/${MANIFESTDIR}news.cfg" ]; then
+			BLOGTITLE="$(getConfigValue "${SITEDIR}/site/${MANIFESTDIR}news.cfg" "BLOGTITLE")"
+			BLOGDESCRIPTION="$(getConfigValue "${SITEDIR}/site/${MANIFESTDIR}news.cfg" "BLOGDESCRIPTION")"
+
+			if [ "${BLOGTITLE}" = "" ]; then BLOGTITLE="News"; fi
+			if [ "${BLOGDESCRIPTION}" = "" ]; then BLOGDESCRIPTION="News"; fi
+		fi
+
+		# Dermine the order of news articles in news/index.md and news/feed.xml
+		FILES="$(cat "${MANIFEST}")"
+		for f in ${FILES}; do
+			page="$(sanitizefilename "${f}")"
+			if [ ! -f "${SITEDIR}/site/${MANIFESTDIR}${page}" ]; then
+				printf "build-html: news file '%s' does not exist in site '%s' for news section '%s'. Skipping this file\n" "${page}" "${SITENAME}" "${MANIFESTDIR}"
+				continue
+			fi
+		done
+
+		# generate the index file
+		if [ -f "${SITEDIR}/site/${MANIFESTDIR}news-list.md.include" ]; then
+			cat "${SITEDIR}/site/${MANIFESTDIR}news-list.md.include" > "${SITEDIR}/site/${MANIFESTDIR}index.md"
+		else
+			printf "MANIFEST present for %s in %s but no news-list.md.include present with that MANIFEST. Skipping this news section.\n" "${SITEDIR}" "${MANIFESTDIR}"
+			continue
+		fi
+		if [ "${MANIFESTDIR}" = "${BLOGDIR}" ]; then
+			printf "\nSubscribe to RSS: [/feed.xml](/feed.xml)\n\n" >> "${SITEDIR}/site/${MANIFESTDIR}index.md"
+		else
+			printf "\nSubscribe to RSS: [/%sfeed.xml](/%sfeed.xml)\n\n" "${MANIFESTDIR}" "${MANIFESTDIR}" >> "${SITEDIR}/site/${MANIFESTDIR}index.md"
+		fi
+		for f in $FILES
+		do
+			page="$(sanitizefilename "${f}")"
+			meta "${page}" "${SITEDIR}" "${MANIFESTDIR}" >> "${SITEDIR}/site/${MANIFESTDIR}index.md"
+		done
+
+		# generate the RSS index
+		rss_header "$BLOGTITLE" "$DOMAIN" "$BLOGDESCRIPTION" "${MANIFESTDIR}" > "${SITEDIR}/site/${MANIFESTDIR}feed.xml"
+		for f in $FILES
+		do	
+			page="$(sanitizefilename "${f}")"
+			rss_main "$page" "${SITEDIR}" "${DOMAIN}" "${MANIFESTDIR}" >> "${SITEDIR}/site/${MANIFESTDIR}feed.xml"
+		done
+		rss_footer >> "${SITEDIR}/site/${MANIFESTDIR}feed.xml"
+
+		if [ "${SITEDIR}/site/${MANIFESTDIR}feed.xml" != "${SITEDIR}/site/feed.xml" ] \
+				&& [ "${MANIFESTDIR}" = "${BLOGDIR}" ]; then
+			rm -f "${SITEDIR}/site/feed.xml"
+			cp "${SITEDIR}/site/${MANIFESTDIR}feed.xml" "${SITEDIR}/site/feed.xml"
+		fi
+
+	done
+	#fi
+}
+
+mksitemap() {
+	SITEDIR="${1}"
+	if [ ! -f "${SITEDIR}/site/sitemap.include" ]; then return 0; fi
+	# only generate a sitemap if one is specified
+
+	TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
+
+	cat "${SITEDIR}/site/sitemap.include" > "${TMPFILE}"
+	printf "\n\n" >> "${TMPFILE}"
+
+	printf "<div class='sitemap'>\n" >> "${TMPFILE}"
+	for MDFILE in $(find -L "${SITEDIR}/site/" -type f -name "*.md"); do
+		if [ ! -f "${MDFILE}" ]; then continue; fi
+		URI="${MDFILE##${SITEDIR}/site}"
+		URI="${URI%index*}"
+		printf "* %s: [%s](%s)\n" "${URI}" "$(title "${MDFILE}")" "${URI}" >> "${TMPFILE}"
+	done
+	printf "</div>\n\n" >> "${TMPFILE}"
+
+	rm -f "${SITEDIR}/site/sitemap.md"
+	cp "${TMPFILE}" "${SITEDIR}/site/sitemap.md"
+
+	rm -f "${TMPFILE}"
+}
+
+buildsite() {
+	SITEDIR="${1}"
+
+	if [ ! -d "${SITEDIR}" ]; then return 0; fi
+
+	SITENAME="${SITEDIR}"
+
+	if [ ! -f "${SITEDIR}/site.cfg" ]; then
+		printf "build-html: site.cfg missing for site '%s'. Skipping this site\n" "${SITENAME}"
+		return 0
+	fi
+
+	TITLE="$(getConfigValue "${SITEDIR}/site.cfg" "TITLE")"
+	if [ "${TITLE}" = "" ]; then TITLE="-T untitled_output"; fi
+
+	CSS="$(getConfigValue "${SITEDIR}/site.cfg" "CSS")"
+	# optional. if empty, there just won't be any css
+
+	DOMAIN="$(getConfigValue "${SITEDIR}/site.cfg" "DOMAIN")"
+	if [ "${DOMAIN}" = "" ]; then
+		printf "%s/site.cfg does not specify DOMAIN. Exiting\n" "${SITEDIR}"
+		return 1
+	fi
+
+	BLOGTITLE="$(getConfigValue "${SITEDIR}/site.cfg" "BLOGTITLE")"
+	if [ "${BLOGTITLE}" = "" ]; then BLOGTITLE="News"; fi
+
+	BLOGDESCRIPTION="$(getConfigValue "${SITEDIR}/site.cfg" "BLOGDESCRIPTION")"
+	if [ "${BLOGDESCRIPTION}" = "" ]; then BLOGDESCRIPTION="News"; fi
+
+	BLOGDIR="$(getConfigValue "${SITEDIR}/site.cfg" "BLOGDIR")"
+	# optional. if not set, this will be empty, and blog will be homepage
+
+	mksitemap "${SITEDIR}"
+	mknews "${SITEDIR}" "${SITENAME}" "${BLOGDIR}" "${DOMAIN}"
+
+	for mdfile in $(find -L ${SITEDIR}/ -name '*.md'); do
+		printf "Compiling '%s' into '%s.html'\n" "${mdfile}" "${mdfile%.md}"
+		mkhtml "${mdfile}" "${SITEDIR##*/}" "${TITLE}" "${CSS}"
+	done
+}
+
+if [ ! -d "www" ]; then
+	printf "untitled error: no www/ directory. Exiting\n"
+	exit 1
+fi
+
+TMPFILE=$(mktemp -t untitled.XXXXXXXXXX)
+printf "\n" > "${TMPFILE}"
+for i in $(find -L www); do
+	if [ -L "${i}" ]; then
+		printf "%s\n" "${i}" 2>&1 >> "${TMPFILE}"
+	fi
+done
+if [ "$(cat "${TMPFILE}")" != "" ]; then
+	printf "ERROR: symbolic links present in the www/ directory. Exiting. List:\n"
+	cat "${TMPFILE}" | sort > "${TMPFILE}"
+	rm -f "${TMPFILE}"
+	exit 1
+fi
+rm -f "${TMPFILE}"
+
+for i in build clean Makefile; do
+	if [ ! -f "${i}.sha1sum" ]; then
+		./clean
+		sha1sum "${i}" > "${i}.sha1sum"
+	fi
+	if [ "$(sha1sum "${i}")" != "$(cat "${i}.sha1sum")" ]; then
+		./clean
+		sha1sum "${i}" > "${i}.sha1sum"
+	fi
+done
+
+if [ $# -gt 0 ]; then
+	for sitename in "${@}"; do
+		sitedir="www/${sitename##*/}"
+		buildsite "${sitedir}"
+	done
+else
+	for sitedir in www/*; do
+		buildsite "${sitedir}"
+	done
+fi
+
