@@ -300,17 +300,23 @@ mknews() {
 
 		# Dermine the order of news articles in news/index.md and news/feed.xml
 		FILES="$(cat "${MANIFEST}")"
+		TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
+		printf "\n" > "${TMPFILE}"
 		for f in ${FILES}; do
 			page="$(sanitizefilename "${f}")"
 			if [ ! -f "${SITEDIR}/site/${MANIFESTDIR}${page}" ]; then
-				printf "build-html: news file '%s' does not exist in site '%s' for news section '%s'. Skipping this file\n" "${page}" "${SITENAME}" "${MANIFESTDIR}"
-				continue
+				printf "build-html: news file '%s' does not exist in site '%s' for news section '%s'. Skipping this news section\n" "${page}" "${SITENAME}" "${MANIFESTDIR}" >> "${TMPFILE}"
 			fi
 			if [ "$(readlink -f "$(pwd)/${SITEDIR}/site/${MANIFESTDIR}${page}" 2>&1)" != "$(pwd)/${SITEDIR}/site/${MANIFESTDIR}${page}" ]; then
-				printf "build-html: news file '%s' different when running readlink -f. skipping this file\n" "${page}"
-				continue
+				printf "build-html: news file '%s' different when running readlink -f. skipping this news section\n" "${page}" >> "${TMPFILE}"
 			fi
 		done
+		if [ "$(cat "${TMPFILE}")" != "" ]; then
+			cat "${TMPFILE}"
+			rm -f "${TMPFILE}"
+			continue
+		fi
+		rm -f "${TMPFILE}"
 
 		# generate the index file
 		if [ -f "${SITEDIR}/site/${MANIFESTDIR}news-list.md.include" ]; then
