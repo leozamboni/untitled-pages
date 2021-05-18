@@ -438,6 +438,8 @@ buildsite() {
 	SITECHANGED="n"
 	SITEDIR="${1}"
 
+	printf "\nProcessing files in site: %s\n" "${SITEDIR##*/}"
+
 	if [ ! -d "${SITEDIR}" ]; then return 0; fi
 	if [ -f "${SITEDIR}" ]; then return 0; fi
 
