@@ -3,6 +3,9 @@ title: Untitled static site generator
 x-toc-enable: true
 ...
 
+Introduction
+============
+
 You can download the latest version of Untitled here:\
 <https://untitled.vimuser.org/>
 
@@ -181,14 +184,6 @@ See:
 
 * <https://www.gnu.org/software/bash/>
 * <https://pandoc.org/>
-
-Optionally, you can install GNU Make:
-
-* <https://www.gnu.org/software/make/>
-
-There is a `Makefile` included, but it's optional. You can run `make` which
-will run `./build` or you can run `make clean` which will run `./clean`. You
-can alternatively just run `./build` and `./clean` directory.
 
 Generate a website
 ------------------

@@ -459,7 +459,7 @@ if [ "$(cat "${TMPFILE}")" != "" ]; then
 fi
 rm -f "${TMPFILE}"
 
-for i in build clean Makefile; do
+for i in build clean; do
 	if [ ! -f "${i}.sha1sum" ]; then
 		./clean
 		sha1sum "${i}" > "${i}.sha1sum"
