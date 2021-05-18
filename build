@@ -463,6 +463,10 @@ if [ ! -d "www" ]; then
 	printf "untitled error: no www/ directory. Exiting\n"
 	exit 1
 fi
+if [ -L "www" ]; then
+	printf "untitled error: www/ directory is a symlink. Exiting\n"
+	exit 1
+fi
 
 for i in build clean; do
 	if [ ! -f "${i}.sha1sum" ]; then
