@@ -100,14 +100,18 @@ filehasnotchanged() {
 
 	if [ -d "${f}.sha1sum" ]; then
 		return 1
-	elif [ ! -f "${f}.sha1sum" ]; then
-		sha1sum "${f}" > "${f}.sha1sum"
-		return 1
-	elif [ "$(cat "${f}.sha1sum")" != "$(sha1sum "${f}")" ]; then
+	fi
+
+	if [ ! -f "${f}.sha1sum" ]; then
 		sha1sum "${f}" > "${f}.sha1sum"
 		return 1
 	fi
-	return 0
+	checksum="$(sha1sum "${f}")"
+	if  [ "$(cat "${f}.sha1sum")" = "${checksum}" ]; then
+		return 0
+	fi
+	printf "%s\n" "${checksum}" > "${f}.sha1sum"
+	return 1
 }
 
 # convert pandoc-markdown file into html, using a template file
