@@ -389,6 +389,26 @@ buildsite() {
 
 	TEMPLATE="${SITEDIR}/site/template.include"
 
+	# check if there are symlinks in the site directory
+	if [ -L "${SITEDIR}" ]; then
+		printf "%s site dir is a symlink. skipping this site\n" "${SITEDIR}"
+		return 0
+	fi
+	TMPFILE=$(mktemp -t untitled.XXXXXXXXXX)
+	printf "\n" > "${TMPFILE}"
+	for i in $(find -L "${SITEDIR}"); do
+		if [ -L "${i}" ]; then
+			printf "%s\n" "${i}" 2>&1 >> "${TMPFILE}"
+		fi
+	done
+	if [ "$(cat "${TMPFILE}")" != "" ]; then
+		printf "ERROR: symbolic links present in the %s directory. skipping this site. List:\n" "${SITEDIR}"
+		cat "${TMPFILE}" | sort > "${TMPFILE}"
+		rm -f "${TMPFILE}"
+		return 0
+	fi
+	rm -f "${TMPFILE}"
+
 	# checks for sha1sum on mandatory files
 	for f in "${TEMPLATE}" "${SITEDIR}/site.cfg"; do
 		for d in "${f}" "${f}.sha1sum"; do
@@ -443,21 +463,6 @@ if [ ! -d "www" ]; then
 	printf "untitled error: no www/ directory. Exiting\n"
 	exit 1
 fi
-
-TMPFILE=$(mktemp -t untitled.XXXXXXXXXX)
-printf "\n" > "${TMPFILE}"
-for i in $(find -L www); do
-	if [ -L "${i}" ]; then
-		printf "%s\n" "${i}" 2>&1 >> "${TMPFILE}"
-	fi
-done
-if [ "$(cat "${TMPFILE}")" != "" ]; then
-	printf "ERROR: symbolic links present in the www/ directory. Exiting. List:\n"
-	cat "${TMPFILE}" | sort > "${TMPFILE}"
-	rm -f "${TMPFILE}"
-	exit 1
-fi
-rm -f "${TMPFILE}"
 
 for i in build clean; do
 	if [ ! -f "${i}.sha1sum" ]; then
