@@ -430,6 +430,30 @@ buildsite() {
 		fi
 	done
 
+	# checks for sha1sum on optional files
+	for f in "${SITEDIR}/site/footer.include" "${SITEDIR}/site/nav.include"; do
+		for d in "${f}" "${f}.sha1sum"; do
+			if [ -d "${d}" ]; then
+				printf "%s is supposed to be a file, but it exists as a directory. skipping this site\n" "${d}"
+				return 0
+			fi
+		done
+		if [ ! -f "${f}" ]; then
+			rm -f "${f}.sha1sum"
+			continue
+		fi
+		if [ ! -f "${f}.sha1sum" ]; then
+			./clean "${SITENAME}"
+			printf "%s.sha1sum doesn't exist. cleaning %s\n" "${f}" "${SITENAME}"
+			sha1sum "${f}" > "${f}.sha1sum"
+		fi
+		if [ "$(sha1sum "${f}")" != "$(cat "${f}.sha1sum")" ]; then
+			sha1sum "${f}" > "${f}.sha1sum"
+			printf "%s.sha1sum changed. cleaning %s\n" "${f}" "${SITENAME}"
+			./clean "${SITENAME}"
+		fi
+	done
+
 	TITLE="$(getConfigValue "${SITEDIR}/site.cfg" "TITLE")"
 	if [ "${TITLE}" = "" ]; then TITLE="-T untitled_output"; fi
 
