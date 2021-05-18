@@ -89,6 +89,25 @@ rss_footer() {
 	printf '%s\n' '</rss>'
 }
 
+# checks sha1sum of a given file
+# returns 1 if the file has changed
+filehasnotchanged() {
+	# return 1 means yes, needs to be changed
+	# 0 means no, doesn't need to be changed
+	f="${1}"
+
+	if [ -d "${f}.sha1sum" ]; then
+		return 1
+	elif [ ! -f "${f}.sha1sum" ]; then
+		sha1sum "${f}" > "${f}.sha1sum"
+		return 1
+	elif [ "$(cat "${f}.sha1sum")" != "$(sha1sum "${f}")" ]; then
+		sha1sum "${f}" > "${f}.sha1sum"
+		return 1
+	fi
+	return 0
+}
+
 # convert pandoc-markdown file into html, using a template file
 mkhtml() {
 	FILE=${1%.md}
@@ -96,12 +115,11 @@ mkhtml() {
 	TITLE="${3}"
 	CSS="${4}"
 
+	NEEDCHANGE="n"
+
 	if [ -d "${FILE}.html" ]; then
 		printf "%s: %s.html is a DIRECTORY. skipping %s.md\n" "${SITEDIR}" "${FILE}" "${FILE}"
 		return 0
-	fi
-	if [ ! -f "${FILE}.sha1sum" ]; then
-		sha1sum "${FILE}.md" > "${FILE}.sha1sum"
 	fi
 
 	# e.g. file.md is english and file.ru.md is russian
@@ -157,6 +175,15 @@ mkhtml() {
 	if [ "${LANG}" != "en" ]; then
 		FILE="${FILE}.${LANG}"
 		URI="${URI}.${LANG}"
+	fi
+
+	for f in "${FILE}.md" "${FOOTERFILE}" "${NAVFILE}" "${TEMPLATE}"; do
+		if [ "${f}" = "" ]; then continue; fi
+		filehasnotchanged "${f}" || NEEDCHANGE="y"
+	done 
+
+	if [ "${NEEDCHANGE}" = "n" ] && [ -f "${FILE}.html" ]; then
+		return 0
 	fi
 
 	TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
