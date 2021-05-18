@@ -307,6 +307,9 @@ mknews() {
 			if [ ! -f "${SITEDIR}/site/${MANIFESTDIR}${page}" ]; then
 				printf "build-html: news file '%s' does not exist in site '%s' for news section '%s'. Skipping this news section\n" "${page}" "${SITENAME}" "${MANIFESTDIR}" >> "${TMPFILE}"
 			fi
+			if [ -L "${SITEDIR}/site/${MANIFESTDIR}${page}" ]; then
+				printf "build-html: news file '%s' is a symlink in news section '%s' for site '%s'. Skipping this news section.\n" "${page}" "${MANIFESTDIR}" "${SITENAME}" >> "${TMPFILE}"
+			fi
 			if [ "$(readlink -f "$(pwd)/${SITEDIR}/site/${MANIFESTDIR}${page}" 2>&1)" != "$(pwd)/${SITEDIR}/site/${MANIFESTDIR}${page}" ]; then
 				printf "build-html: news file '%s' different when running readlink -f. skipping this news section\n" "${page}" >> "${TMPFILE}"
 			fi
