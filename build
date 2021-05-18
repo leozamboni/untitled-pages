@@ -396,6 +396,10 @@ mknews() {
 			cp "${SITEDIR}/site/${MANIFESTDIR}feed.xml" "${SITEDIR}/site/feed.xml"
 		fi
 
+		if [ -f "${SITEDIR}/site/${MANIFESTDIR}index.md" ]; then
+			mkhtml "${SITEDIR}/site/${MANIFESTDIR}index.md" "${SITEDIR##*/}" "${TITLE}" "${CSS}"
+		fi
+
 	done
 	#fi
 }
