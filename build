@@ -374,6 +374,7 @@ buildsite() {
 	SITEDIR="${1}"
 
 	if [ ! -d "${SITEDIR}" ]; then return 0; fi
+	if [ -f "${SITEDIR}" ]; then return 0; fi
 
 	SITENAME="${SITEDIR}"
 
