@@ -306,6 +306,10 @@ mknews() {
 				printf "build-html: news file '%s' does not exist in site '%s' for news section '%s'. Skipping this file\n" "${page}" "${SITENAME}" "${MANIFESTDIR}"
 				continue
 			fi
+			if [ "$(readlink -f "$(pwd)/${SITEDIR}/site/${MANIFESTDIR}${page}" 2>&1)" != "$(pwd)/${SITEDIR}/site/${MANIFESTDIR}${page}" ]; then
+				printf "build-html: news file '%s' different when running readlink -f. skipping this file\n" "${page}"
+				continue
+			fi
 		done
 
 		# generate the index file
