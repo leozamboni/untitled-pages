@@ -96,6 +96,10 @@ mkhtml() {
 	TITLE="${3}"
 	CSS="${4}"
 
+	if [ ! -f "${FILE}.sha1sum" ]; then
+		sha1sum "${FILE}.md" > "${FILE}.sha1sum"
+	fi
+
 	if [ -f "${SITEDIR}/site/template.include" ]; then
 		TEMPLATE="${SITEDIR}/site/template.include"
 	else
