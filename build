@@ -571,6 +571,8 @@ buildsite() {
 	if [ "${SITECHANGED}" = "y" ]; then
 		mksitemap "${SITEDIR}" "${TITLE}" "${CSS}"
 		mknews "${SITEDIR}" "${SITENAME}" "${BLOGDIR}" "${DOMAIN}" "${TITLE}" "${CSS}"
+	else
+		printf "this website has not been changed. skipping.\n"
 	fi
 }
 
