@@ -474,6 +474,24 @@ buildsite() {
 
 	BLOGDIR="$(getConfigValue "${SITEDIR}/site.cfg" "BLOGDIR")"
 	# optional. if not set, this will be empty, and blog will be homepage
+	TESTDIR="$(pwd)/${SITEDIR}/site/${BLOGDIR%/}"
+	if [ "$(readlink -f "${TESTDIR}" 2>&1)" != "${TESTDIR}" ]; then
+		printf "Invalid BLOGDIR in site.cfg for %s. skipping this site\n" "${SITEDIR}"
+		return 0	
+	fi
+	if [ -L "${TESTDIR}" ]; then
+		printf "BLOGDIR in site.cfg for %s is a symlink. skipping the site\n" "${SITEDIR}"
+		return 0
+	fi
+	if [ -f "${TESTDIR}" ]; then
+		printf "BLOGDIR in site.cfg for %s is a file. skipping this site\n" "${SITEDIR}"
+		return 0
+	fi
+	TESTDIR="${TESTDIR##$(pwd)/${SITEDIR}/site/}"
+	if [ ! -d "${SITEDIR}/site/${TESTDIR}" ]; then
+		printf "BLOGDIR does not exist in %s. skipping this site\n" "${SITEDIR}"
+		return 0
+	fi
 
 	mksitemap "${SITEDIR}"
 	mknews "${SITEDIR}" "${SITENAME}" "${BLOGDIR}" "${DOMAIN}"
