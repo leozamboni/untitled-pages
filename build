@@ -337,7 +337,7 @@ mknews() {
 			printf "MANIFEST present for %s in %s but no news-list.md.include present with that MANIFEST. Skipping this news section.\n" "${SITEDIR}" "${MANIFESTDIR}"
 			continue
 		fi
-		if [ "${MANIFESTDIR}" = "${BLOGDIR}" ]; then
+		if [ "${MANIFESTDIR%/}" = "${BLOGDIR%/}" ]; then
 			printf "\nSubscribe to RSS: [/feed.xml](/feed.xml)\n\n" >> "${SITEDIR}/site/${MANIFESTDIR}index.md"
 		else
 			printf "\nSubscribe to RSS: [/%sfeed.xml](/%sfeed.xml)\n\n" "${MANIFESTDIR}" "${MANIFESTDIR}" >> "${SITEDIR}/site/${MANIFESTDIR}index.md"
