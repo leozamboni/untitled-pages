@@ -378,18 +378,6 @@ buildsite() {
 
 	SITENAME="${SITEDIR}"
 
-	if [ ! -f "${SITEDIR}/site.cfg" ]; then
-		printf "build-html: site.cfg missing for site '%s'. Skipping this site\n" "${SITENAME}"
-		return 0
-	fi
-
-	if [ ! -f "${SITEDIR}/site/template.include" ]; then
-		printf "mkhtml: no template.include file in %s. skipping this site\n" "${SITEDIR}"
-		return 0
-	fi
-
-	TEMPLATE="${SITEDIR}/site/template.include"
-
 	# check if there are symlinks in the site directory
 	if [ -L "${SITEDIR}" ]; then
 		printf "%s site dir is a symlink. skipping this site\n" "${SITEDIR}"
@@ -409,6 +397,18 @@ buildsite() {
 		return 0
 	fi
 	rm -f "${TMPFILE}"
+
+	if [ ! -f "${SITEDIR}/site.cfg" ]; then
+		printf "build-html: site.cfg missing for site '%s'. Skipping this site\n" "${SITENAME}"
+		return 0
+	fi
+
+	if [ ! -f "${SITEDIR}/site/template.include" ]; then
+		printf "mkhtml: no template.include file in %s. skipping this site\n" "${SITEDIR}"
+		return 0
+	fi
+
+	TEMPLATE="${SITEDIR}/site/template.include"
 
 	# checks for sha1sum on mandatory files
 	for f in "${TEMPLATE}" "${SITEDIR}/site.cfg"; do
