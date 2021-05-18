@@ -459,6 +459,10 @@ buildsite() {
 	done
 }
 
+if [ -f "www" ]; then
+	printf "untitled error: www is a file. should be a directory. exiting.\n"
+	exit 1
+fi
 if [ ! -d "www" ]; then
 	printf "untitled error: no www/ directory. Exiting\n"
 	exit 1
