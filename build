@@ -99,13 +99,8 @@ mkhtml() {
 	if [ ! -f "${FILE}.sha1sum" ]; then
 		sha1sum "${FILE}.md" > "${FILE}.sha1sum"
 	fi
-
-	if [ -f "${SITEDIR}/site/template.include" ]; then
-		TEMPLATE="${SITEDIR}/site/template.include"
-	else
-		printf "mkhtml: no template.include file in %s\n" "${SITEDIR}"
-		exit 1
-	fi
+	
+	TEMPLATE="${SITEDIR}/site/template.include"
 
 	TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
 
@@ -386,6 +381,33 @@ buildsite() {
 		printf "build-html: site.cfg missing for site '%s'. Skipping this site\n" "${SITENAME}"
 		return 0
 	fi
+
+	if [ ! -f "${SITEDIR}/site/template.include" ]; then
+		printf "mkhtml: no template.include file in %s. skipping this site\n" "${SITEDIR}"
+		return 0
+	fi
+
+	TEMPLATE="${SITEDIR}/site/template.include"
+
+	# checks for sha1sum on mandatory files
+	for f in "${TEMPLATE}" "${SITEDIR}/site.cfg"; do
+		for d in "${f}" "${f}.sha1sum"; do
+			if [ -d "${d}" ]; then
+				printf "%s is supposed to be a file, but it exists as a directory. skipping this site\n" "${d}"
+				return 0
+			fi
+		done
+		if [ ! -f "${f}.sha1sum" ]; then
+			./clean "${SITENAME}"
+			printf "%s.sha1sum doesn't exist. cleaning %s\n" "${f}" "${SITENAME}"
+			sha1sum "${f}" > "${f}.sha1sum"
+		fi
+		if [ "$(sha1sum "${f}")" != "$(cat "${f}.sha1sum")" ]; then
+			sha1sum "${f}" > "${f}.sha1sum"
+			printf "%s.sha1sum changed. cleaning %s\n" "${f}" "${SITENAME}"
+			./clean "${SITENAME}"
+		fi
+	done
 
 	TITLE="$(getConfigValue "${SITEDIR}/site.cfg" "TITLE")"
 	if [ "${TITLE}" = "" ]; then TITLE="-T untitled_output"; fi
