@@ -96,9 +96,15 @@ mkhtml() {
 	TITLE="${3}"
 	CSS="${4}"
 
+	if [ -d "${FILE}.html" ]; then
+		printf "%s: %s.html is a DIRECTORY. skipping %s.md\n" "${SITEDIR}" "${FILE}" "${FILE}"
+		return 0
+	fi
 	if [ ! -f "${FILE}.sha1sum" ]; then
 		sha1sum "${FILE}.md" > "${FILE}.sha1sum"
 	fi
+
+	printf "Compiling '%s.md' into '%s.html'\n" "${FILE}" "${FILE}"
 	
 	TEMPLATE="${SITEDIR}/site/template.include"
 
@@ -510,7 +516,6 @@ buildsite() {
 	mknews "${SITEDIR}" "${SITENAME}" "${BLOGDIR}" "${DOMAIN}"
 
 	for mdfile in $(find -L ${SITEDIR}/ -name '*.md'); do
-		printf "Compiling '%s' into '%s.html'\n" "${mdfile}" "${mdfile%.md}"
 		mkhtml "${mdfile}" "${SITEDIR##*/}" "${TITLE}" "${CSS}"
 	done
 }
