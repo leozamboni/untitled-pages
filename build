@@ -415,6 +415,7 @@ mksitemap() {
 	printf "<div class='sitemap'>\n" >> "${TMPFILE}"
 	for MDFILE in $(find -L "${SITEDIR}/site/" -type f -name "*.md"); do
 		if [ ! -f "${MDFILE}" ]; then continue; fi
+		if [ "${MDFILE}" = "${SITEDIR}/site/sitemap.md" ]; then continue; fi
 		URI="${MDFILE##${SITEDIR}/site}"
 		URI="${URI%index*}"
 		printf "* %s: [%s](%s)\n" "${URI}" "$(title "${MDFILE}")" "${URI}" >> "${TMPFILE}"
