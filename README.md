@@ -64,7 +64,7 @@ all the forks. Untitled static site generator was created by Leah Rowe, who
 also leads the Libreboot project. Untitled is heavily based on the original
 static site generator written by Alyssa Rosenzweig for the Libreboot website.
 
-Untitled is *Free Software*. See the COPYING and LICENSE files included with
+Untitled is *Free Software*. See the COPYING file included with
 the *untitled static site generator*. Learn more about Free Software:\
 <https://www.gnu.org/philosophy/free-sw.html> (basically, it means that *you*
 have control over your own copy, to do whatever you want with, and you could
