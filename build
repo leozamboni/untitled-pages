@@ -20,6 +20,8 @@
 [ "x${DEBUG+set}" = 'xset' ] && set -v
 set -u -e
 
+SITECHANGED="n"
+
 # usage: title file
 title() {
 	firstchar=$(head -c 1 ${1})
@@ -186,6 +188,8 @@ mkhtml() {
 		return 0
 	fi
 
+	SITECHANGED="y"
+
 	TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
 
 	firstchar=$(head -c 1 ${1})
@@ -315,6 +319,8 @@ mknews() {
 	SITENAME="${2}"
 	BLOGDIR="${3}"
 	DOMAIN="${4}"
+	TITLE="${5}"
+	CSS="${6}"
 
 	#if [ -f "${SITEDIR}/site/${BLOGDIR}MANIFEST" ]; then
 
@@ -396,6 +402,8 @@ mknews() {
 
 mksitemap() {
 	SITEDIR="${1}"
+	TITLE="${2}"
+	CSS="${3}"
 	if [ ! -f "${SITEDIR}/site/sitemap.include" ]; then return 0; fi
 	# only generate a sitemap if one is specified
 
@@ -413,13 +421,16 @@ mksitemap() {
 	done
 	printf "</div>\n\n" >> "${TMPFILE}"
 
-	rm -f "${SITEDIR}/site/sitemap.md"
 	cp "${TMPFILE}" "${SITEDIR}/site/sitemap.md"
-
 	rm -f "${TMPFILE}"
+
+	if [ -f "${SITEDIR}/site/sitemap.md" ]; then
+		mkhtml "${SITEDIR}/site/sitemap.md" "${SITEDIR##*/}" "${TITLE}" "${CSS}"
+	fi
 }
 
 buildsite() {
+	SITECHANGED="n"
 	SITEDIR="${1}"
 
 	if [ ! -d "${SITEDIR}" ]; then return 0; fi
@@ -542,12 +553,14 @@ buildsite() {
 		return 0
 	fi
 
-	mksitemap "${SITEDIR}"
-	mknews "${SITEDIR}" "${SITENAME}" "${BLOGDIR}" "${DOMAIN}"
-
 	for mdfile in $(find -L ${SITEDIR}/ -name '*.md'); do
 		mkhtml "${mdfile}" "${SITEDIR##*/}" "${TITLE}" "${CSS}"
 	done
+
+	if [ "${SITECHANGED}" = "y" ]; then
+		mksitemap "${SITEDIR}" "${TITLE}" "${CSS}"
+		mknews "${SITEDIR}" "${SITENAME}" "${BLOGDIR}" "${DOMAIN}" "${TITLE}" "${CSS}"
+	fi
 }
 
 if [ -f "www" ]; then
