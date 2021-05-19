@@ -359,6 +359,13 @@ Untitled. They simply index your entire website.
 NOTE: It only looks at pages where a Markdown file exists. It ignores pages
 where an HTML page exists but a Markdown page doesn't.
 
+www/sitename/site/sitemap.include
+---------------------------------
+
+This file MUST be included if you want a sitemap.
+
+Simply put a title and some text in here. Untitled and Pandoc will do the rest!
+
 www/sitename/site/footer.include
 --------------------------------
 
