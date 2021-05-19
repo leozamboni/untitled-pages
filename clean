@@ -23,6 +23,9 @@ if [ ! -d "www" ]; then
 	exit 1
 fi
 
+# NOTE: the cleansite script does check for symlinks, but unlike in the build
+# script, an entire site won't simply be skipped for having symlinks.
+
 cleansite() {
 	SITENAME="${1}"
 
@@ -30,20 +33,37 @@ cleansite() {
 		printf "Site '%s' has no site directory; skipping clean\n" "${SITENAME}"
 		return 0
 	fi
+	if [ -L "www/${SITENAME}" ] || [ -L "www/${SITENAME}/site" ]; then
+		printf "Site '%s' is a symlink directory. skipping clean\n" "${SITENAME}"
+		return 0
+	fi
 
-	printf "Cleaning .html files from site: '%s'\n" "${SITENAME}"
+	printf "Cleaning generated files from site: '%s'\n" "${SITENAME}"
 
 	for f in $(find -L www/"${SITENAME}"/site/ -type f -name '*.html'); do
 		if [ ! -f "${f}" ]; then continue; fi
-		if [ -f "${f%.html}.md" ]; then
+		if [ -L "${f}" ]; then continue; fi
+		if [ -f "${f%.html}.md" ] && [ ! -L "${f%.html}.md" ]; then
 			rm -f "${f}"
 		fi
+	done
+
+	for f in $(find -L www/"${SITENAME}"/site/ -type f -name "*.sha1sum"); do
+		if [ ! -f "${f}" ]; then continue; fi
+		if [ -L "${f}" ]; then continue; fi
+		rm -f "${f}"
 	done
 
 	rm -f www/"${SITENAME}"/site/feed.xml
 	for f in $(find -L www/"${SITENAME}"/site/ -type f -name 'MANIFEST'); do
 		if [ ! -f "${f}" ]; then continue; fi
-		rm -f "${f%MANIFEST}"{index.md,index.html,feed.xml} # index page is auto-generated
+		if [ -L "${f}" ]; then continue; fi
+		for ff in "${f%MANIFEST}"{index.md,index.html,feed.xml}; do
+			if [ ! -f "${ff}" ]; then continue; fi
+			if [ -L "${ff}" ]; then continue; fi
+
+			rm -f "${ff}"
+		done
 	done
 }
 
