@@ -48,7 +48,7 @@ cleansite() {
 		fi
 	done
 
-	for f in $(find -L www/"${SITENAME}"/site/ -type f -name "*.sha1sum"); do
+	for f in $(find -L "www/${SITENAME}" -type f -name "*.sha1sum" ! -path "www/${SITENAME}/.git"); do
 		if [ ! -f "${f}" ]; then continue; fi
 		if [ -L "${f}" ]; then continue; fi
 		rm -f "${f}"
