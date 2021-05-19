@@ -456,7 +456,7 @@ buildsite() {
 	fi
 	TMPFILE=$(mktemp -t untitled.XXXXXXXXXX)
 	printf "\n" > "${TMPFILE}"
-	for i in $(find -L "${SITEDIR}"); do
+	for i in $(find -L "${SITEDIR}" ! -path "${SITEDIR}/.git"); do
 		if [ -L "${i}" ]; then
 			printf "%s\n" "${i}" 2>&1 >> "${TMPFILE}"
 		fi
@@ -564,7 +564,7 @@ buildsite() {
 		return 0
 	fi
 
-	for mdfile in $(find -L ${SITEDIR}/ -name '*.md'); do
+	for mdfile in $(find -L ${SITEDIR} -name '*.md' ! -path "${SITEDIR}/.git"); do
 		mkhtml "${mdfile}" "${SITEDIR##*/}" "${TITLE}" "${CSS}"
 	done
 
