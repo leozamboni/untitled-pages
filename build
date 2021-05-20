@@ -636,7 +636,7 @@ buildsite() {
 		return 0
 	fi
 
-	for mdfile in $(find -L ${SITEDIR} -name '*.md' ! -path "${SITEDIR}/.git"); do
+	for mdfile in $(find -L ${SITEDIR}/site/ -name '*.md'); do
 		mkhtml "${mdfile}" "${SITEDIR##*/}" "${TITLE}" "${CSS}"
 	done
 
