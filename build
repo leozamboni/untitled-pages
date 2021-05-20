@@ -20,6 +20,11 @@
 [ "x${DEBUG+set}" = 'xset' ] && set -v
 set -u -e
 
+# TODO: make printf's into pages come from separate files
+# TODO: make those messages configurable
+# TODO: support translated versions of those messages
+# TODO: (based on above todo) improve the language support
+
 SITECHANGED="n"
 
 # usage: title file
@@ -57,6 +62,7 @@ meta() {
 }
 
 # usage: rss_header
+# TODO: fix this cunsed code. RSS code is cursed
 rss_header() {
 	BLOGTITLE="${1}"
 	DOMAIN="${2}" # without a / at the end, but with http:// or https://
@@ -72,6 +78,7 @@ rss_header() {
 }
 
 # usage: rss_main file
+# TODO: fix this cursed code. RSS code is cursed
 rss_main() {
 	file="${1}"
 	SITEDIR="${2}"
@@ -90,6 +97,7 @@ rss_main() {
 }
 
 # usage: rss_footer
+# TODO: fix this cursed code. RSS code is cursed
 rss_footer() {
 	printf '%s\n' '</channel>'
 	printf '%s\n' '</rss>'
@@ -123,6 +131,7 @@ mkhtml() {
 	TITLE="${3}"
 	CSS="${4}"
 
+	# will be set to y if page changes are detected
 	NEEDCHANGE="n"
 
 	if [ -d "${FILE}.html" ]; then
@@ -171,16 +180,19 @@ mkhtml() {
 		NAVFILE="${SITEDIR}/site/nav.include"
 	fi
 
+	# Allow a given page to override the default template
 	TEMPLATE="${SITEDIR}/site/template.include"
 	if [ -f "${FILE}.template" ]; then
 		TEMPLATE="${FILE}.template"
 	fi
 
+	# Allow a given page to override the default CSS
 	CSSOVERRIDE=""
 	if [ -f "${FILE}.css" ]; then
 		CSSOVERRIDE="--css ${URI}.css"
 	fi
 
+	# TODO: fix this cursed abomination
 	if [ "${LANG}" != "en" ]; then
 		FILE="${FILE}.${LANG}"
 		URI="${URI}.${LANG}"
@@ -195,10 +207,14 @@ mkhtml() {
 		return 0
 	fi
 
+	# The news and sitemap function need to know this
+	# because they will only be called if this variable is set to y
 	SITECHANGED="y"
 
 	TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
 
+	# TODO: fix this cursed abomination. this code is shit
+	# it looks like assembly code, and it's very fragile and BARELY WORKS
 	firstchar=$(head -c 1 ${1})
 	if [[ "${firstchar}" == "%" ]]; then
 		TMPFILE2=$(mktemp -t untitled_www.XXXXXXXXXX)
