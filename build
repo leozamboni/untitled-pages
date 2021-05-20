@@ -102,18 +102,16 @@ filehasnotchanged() {
 	# 0 means no, doesn't need to be changed
 	f="${1}"
 
-	if [ -d "${f}.sha1sum" ]; then
-		return 1
-	fi
+	[[ ! -f "${f}" ]] && return 0
+	[[ -d "${f}.sha1sum" ]] && return 1
 
 	if [ ! -f "${f}.sha1sum" ]; then
 		sha1sum "${f}" > "${f}.sha1sum"
 		return 1
 	fi
+
 	checksum="$(sha1sum "${f}")"
-	if  [ "$(cat "${f}.sha1sum")" = "${checksum}" ]; then
-		return 0
-	fi
+	[[ "$(cat "${f}.sha1sum")" = "${checksum}" ]] && return 0
 	printf "%s\n" "${checksum}" > "${f}.sha1sum"
 	return 1
 }
@@ -514,63 +512,39 @@ buildsite() {
 	fi
 	rm -f "${TMPFILE}"
 
-	if [ ! -f "${SITEDIR}/site.cfg" ]; then
-		printf "build-html: site.cfg missing for site '%s'. Skipping this site\n" \
-			"${SITENAME}"
-		return 0
-	fi
-
-	if [ ! -f "${SITEDIR}/site/template.include" ]; then
-		printf "mkhtml: no template.include file in %s. skipping this site\n" \
-			"${SITEDIR}"
-		return 0
-	fi
-
 	TEMPLATE="${SITEDIR}/site/template.include"
 
-	# checks for sha1sum on mandatory files
-	for f in "${TEMPLATE}" "${SITEDIR}/site.cfg"; do
-		for d in "${f}" "${f}.sha1sum"; do
-			if [ -d "${d}" ]; then
-				printf "%s is supposed to be a file, but it exists as a directory. skipping this site\n" "${d}"
-				return 0
-			fi
-		done
-		if [ ! -f "${f}.sha1sum" ]; then
-			./clean "${SITENAME}"
-			printf "%s.sha1sum doesn't exist. cleaning %s\n" "${f}" "${SITENAME}"
-			sha1sum "${f}" > "${f}.sha1sum"
-		fi
-		if [ "$(sha1sum "${f}")" != "$(cat "${f}.sha1sum")" ]; then
-			sha1sum "${f}" > "${f}.sha1sum"
-			printf "%s.sha1sum changed. cleaning %s\n" "${f}" "${SITENAME}"
-			./clean "${SITENAME}"
-		fi
-	done
-
-	# checks for sha1sum on optional files
-	for f in "${SITEDIR}/site/footer.include" "${SITEDIR}/site/nav.include"; do
-		for d in "${f}" "${f}.sha1sum"; do
-			if [ -d "${d}" ]; then
-				printf "%s is supposed to be a file, but it exists as a directory. skipping this site\n" "${d}"
-				return 0
-			fi
-		done
+	# Check whether the required files are present.
+	# ALSO: Clean the site if site-wide changes are detected
+	# For example: if a template changed, purge the whole site and re-build
+	FILELIST=$(mktemp -t untitled_www.XXXXXXXXXX)
+	printf "%s\n" "${TEMPLATE}" > "${FILELIST}"
+	printf "%s\n" "${SITEDIR}/site.cfg" >> "${FILELIST}"
+	for f in $(cat "${FILELIST}"); do
 		if [ ! -f "${f}" ]; then
-			rm -f "${f}.sha1sum"
-			continue
-		fi
-		if [ ! -f "${f}.sha1sum" ]; then
-			./clean "${SITENAME}"
-			printf "%s.sha1sum doesn't exist. cleaning %s\n" "${f}" "${SITENAME}"
-			sha1sum "${f}" > "${f}.sha1sum"
-		fi
-		if [ "$(sha1sum "${f}")" != "$(cat "${f}.sha1sum")" ]; then
-			sha1sum "${f}" > "${f}.sha1sum"
-			printf "%s.sha1sum changed. cleaning %s\n" "${f}" "${SITENAME}"
-			./clean "${SITENAME}"
+			printf "%s missing for site '%s'. Skipping this site\n" \
+				"${f}" "${SITEDIR}"
+			rm -f "${FILELIST}"
+			return 0
 		fi
 	done
+	for f in "${SITEDIR}/site/footer.include" "${SITEDIR}/site/nav.include"; do
+		[[ -f "${f}" ]] && printf "%s\n" "${f}" >> "${FILELIST}"
+	done
+	for f in $(cat "${FILELIST}"); do
+		filehasnotchanged "${f}" || \
+		( \
+			SITECHANGED="y" \
+			printf "%s has changed\n" "${f}" \
+		)
+	done
+	rm -f "${FILELIST}"
+
+	if [ "${SITECHANGED}" = "y" ]; then
+		printf "Site-wide changes detected in '%s'. Cleaning now.\n" \
+			"${SITEDIR}"
+		./clean "${SITENAME}"
+	fi
 
 	TITLE="$(getConfigValue "${SITEDIR}/site.cfg" "TITLE")"
 	if [ "${TITLE}" = "" ]; then TITLE="-T untitled_output"; fi
@@ -636,21 +610,19 @@ if [ -L "www" ]; then
 	exit 1
 fi
 
-for i in build clean; do
-	if [ ! -f "${i}.sha1sum" ]; then
-		./clean
-		sha1sum "${i}" > "${i}.sha1sum"
-	fi
-	if [ "$(sha1sum "${i}")" != "$(cat "${i}.sha1sum")" ]; then
-		./clean
-		sha1sum "${i}" > "${i}.sha1sum"
-	fi
+PURGE="n"
+for f in build clean; do
+	filehasnotchanged "${f}" || \
+	( \
+		printf "%s has changed\n" "${f}" \
+		PURGE="y" \
+	)
 done
+[[ "${PURGE}" = "y" ]] && ./clean
 
 if [ $# -gt 0 ]; then
 	for sitename in "${@}"; do
-		sitedir="www/${sitename##*/}"
-		buildsite "${sitedir}"
+		buildsite "www/${sitename##*/}"
 	done
 else
 	for sitedir in www/*; do
