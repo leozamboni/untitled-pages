@@ -27,6 +27,8 @@ set -u -e
 
 SITECHANGED="n"
 
+hasher="sha1sum"
+
 # usage: title file
 title() {
 	firstchar=$(head -c 1 ${1})
@@ -114,21 +116,21 @@ filehasnotchanged() {
 		return 0
 	fi
 
-	if [ -d "${f}.sha1sum" ]; then
+	if [ -d "${f}.hash" ]; then
 		return 1
 	fi
 
-	if [ ! -f "${f}.sha1sum" ]; then
-		sha1sum "${f}" > "${f}.sha1sum"
+	if [ ! -f "${f}.hash" ]; then
+		${hasher} "${f}" > "${f}.hash"
 		return 1
 	fi
 
-	checksum="$(sha1sum "${f}")"
-	if [ "$(cat "${f}.sha1sum")" = "${checksum}" ]; then
+	checksum="$(${hasher} "${f}")"
+	if [ "$(cat "${f}.hash")" = "${checksum}" ]; then
 		return 0
 	fi
 
-	printf "%s\n" "${checksum}" > "${f}.sha1sum"
+	printf "%s\n" "${checksum}" > "${f}.hash"
 	return 1
 }
 
@@ -644,11 +646,19 @@ fi
 
 if [ $# -gt 0 ]; then
 	for sitename in "${@}"; do
+		startdate=$(date +%s%N | cut -b1-13)
 		buildsite "www/${sitename##*/}"
+		enddate=$(date +%s%N | cut -b1-13)
+		endtime=$(( enddate - startdate ))
+		printf "time: %d milliseconds\n" "${endtime}"
 	done
 else
 	for sitedir in www/*; do
+		startdate=$(date +%s%N | cut -b1-13)
 		buildsite "${sitedir}"
+		enddate=$(date +%s%N | cut -b1-13)
+		endtime=$(( enddate - startdate ))
+		printf "time: %d milliseconds\n" "${endtime}"
 	done
 fi
 

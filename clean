@@ -48,12 +48,12 @@ cleansite() {
 		fi
 	done
 
-	for f in $(find -L "www/${SITENAME}/site" -type f -name "*.sha1sum"); do
+	for f in $(find -L "www/${SITENAME}/site" -type f -name "*.hash"); do
 		if [ ! -f "${f}" ]; then continue; fi
 		if [ -L "${f}" ]; then continue; fi
-		if [ "${f##*/}" = "footer.include.sha1sum" ] \
-			|| [ "${f##*/}" = "nav.include.sha1sum" ] \
-			|| [ "${f##*/}" = "template.include.sha1sum" ]; then
+		if [ "${f##*/}" = "footer.include.hash" ] \
+			|| [ "${f##*/}" = "nav.include.hash" ] \
+			|| [ "${f##*/}" = "template.include.hash" ]; then
 
 			continue
 		fi
