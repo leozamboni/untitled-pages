@@ -166,8 +166,6 @@ mkhtml() {
 	FOOTERFILE=""
 	if [ -f "${FILE}.footer" ]; then
 		FOOTERFILE="${FILE}.footer"
-	elif [ -f "${SITEDIR}/site/footer.include" ]; then
-		FOOTERFILE="${SITEDIR}/site/footer.include"
 	fi
 
 	# Backlink text for each page. This helps with site navigation
@@ -184,12 +182,10 @@ mkhtml() {
 	NAVFILE=""
 	if [ -f "${FILE}.nav" ]; then
 		NAVFILE="${FILE}.nav"
-	elif [ -f "${SITEDIR}/site/nav.include" ]; then
-		NAVFILE="${SITEDIR}/site/nav.include"
 	fi
 
 	# Allow a given page to override the default template
-	TEMPLATE="${SITEDIR}/site/template.include"
+	TEMPLATE=""
 	if [ -f "${FILE}.template" ]; then
 		TEMPLATE="${FILE}.template"
 	fi
@@ -213,6 +209,19 @@ mkhtml() {
 
 	if [ "${NEEDCHANGE}" = "n" ] && [ -f "${FILE}.html" ]; then
 		return 0
+	fi
+
+	if [ -f "${SITEDIR}/site/footer.include" ] \
+			&& [ "${FOOTERFILE}" = "" ]; then
+		FOOTERFILE="${SITEDIR}/site/footer.include"
+	fi
+
+	if [ -f "${SITEDIR}/site/nav.include" ] && [ "${NAVFILE}" = "" ]; then
+		NAVFILE="${SITEDIR}/site/nav.include"
+	fi
+
+	if [ "${TEMPLATE}" = "" ]; then
+		TEMPLATE="${SITEDIR}/site/template.include"
 	fi
 
 	# The news and sitemap function need to know this
@@ -553,7 +562,9 @@ buildsite() {
 		fi
 	done
 	for f in "${SITEDIR}/site/footer.include" "${SITEDIR}/site/nav.include"; do
-		[[ -f "${f}" ]] && printf "%s\n" "${f}" >> "${FILELIST}"
+		if [ -f "${f}" ]; then
+			printf "%s\n" "${f}" >> "${FILELIST}"
+		fi
 	done
 	for f in $(cat "${FILELIST}"); do
 		filehasnotchanged "${f}" || SITECHANGED="y"

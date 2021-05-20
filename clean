@@ -51,6 +51,12 @@ cleansite() {
 	for f in $(find -L "www/${SITENAME}/site" -type f -name "*.sha1sum"); do
 		if [ ! -f "${f}" ]; then continue; fi
 		if [ -L "${f}" ]; then continue; fi
+		if [ "${f##*/}" = "footer.include.sha1sum" ] \
+			|| [ "${f##*/}" = "nav.include.sha1sum" ] \
+			|| [ "${f##*/}" = "template.include.sha1sum" ]; then
+
+			continue
+		fi
 		rm -f "${f}"
 	done
 
