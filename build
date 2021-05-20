@@ -24,10 +24,16 @@ set -u -e
 # TODO: make those messages configurable
 # TODO: support translated versions of those messages
 # TODO: (based on above todo) improve the language support
+# TODO: support tracking changes to a site, based on a git repository
+#       if that repository is present. otherwise if the site isn't in a git
+#       repository, the current behaviour should still be used
 
 SITECHANGED="n"
 
-hasher="sha1sum"
+hasher="xxhsum"
+which xxhsum || hasher="sha1sum"
+
+printf "hashing program used: %s\n" "${hasher}"
 
 # usage: title file
 title() {
