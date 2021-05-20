@@ -626,16 +626,6 @@ if [ -L "www" ]; then
 	exit 1
 fi
 
-PURGE="n"
-for f in build clean; do
-	filehasnotchanged "${f}" || \
-	( \
-		printf "%s has changed\n" "${f}" \
-		PURGE="y" \
-	)
-done
-[[ "${PURGE}" = "y" ]] && ./clean
-
 if [ $# -gt 0 ]; then
 	for sitename in "${@}"; do
 		buildsite "www/${sitename##*/}"
