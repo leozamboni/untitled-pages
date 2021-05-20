@@ -30,9 +30,6 @@ set -u -e
 
 SITECHANGED="n"
 
-hasher="xxhsum"
-which xxhsum || hasher="sha1sum"
-
 hasher=""
 for hashprogram in xxhsum sha1sum; do
 	which ${hashprogram} || continue
@@ -170,11 +167,11 @@ mkhtml() {
 	# e.g. file.md is english and file.ru.md is russian
 	# TODO: make this less buggy. this hack means there can only be 2 dots
 	# in the file path, and that it must conform to this standard
-	LANG="${FILE##*.}"
-	if [ "${LANG}" = "${FILE}" ]; then
-		LANG="en"
+	PAGELANGUAGE="${FILE##*.}"
+	if [ "${PAGELANGUAGE}" = "${FILE}" ]; then
+		PAGELANGUAGE="en"
 	else
-		FILE="${FILE%.${LANG}}"
+		FILE="${FILE%.${PAGELANGUAGE}}"
 	fi
 
 	# This is the URI but without any extension, *and without language
@@ -216,9 +213,9 @@ mkhtml() {
 	fi
 
 	# TODO: fix this cursed abomination
-	if [ "${LANG}" != "en" ]; then
-		FILE="${FILE}.${LANG}"
-		URI="${URI}.${LANG}"
+	if [ "${PAGELANGUAGE}" != "en" ]; then
+		FILE="${FILE}.${PAGELANGUAGE}"
+		URI="${URI}.${PAGELANGUAGE}"
 	fi
 
 	for f in "${FILE}.md" "${FOOTERFILE}" "${NAVFILE}" "${TEMPLATE}"; do
@@ -335,7 +332,7 @@ mkhtml() {
 	SMART=$(pandoc -v | grep -q '2\.0' || \
 		printf '%s\n' "-f markdown+smart -t html") || SMART=""
 
-	if [ "${LANG}" = "ar" ] || [ "${LANG}" = "he" ]; then
+	if [ "${PAGELANGUAGE}" = "ar" ] || [ "${PAGELANGUAGE}" = "he" ]; then
 		PDIR="rtl"
 	else
 		PDIR="ltr"
@@ -346,7 +343,7 @@ mkhtml() {
 	# $CSS must not be quoted, otherwise pandoc interprets '--css /headercenter.css'
 	# as one argument, when it is actually two.
 	# Same for $TITLE
-	pandoc -V lang=${LANG} -V dir=${PDIR} $TOC $SMART "$TMPFILE" \
+	pandoc -V lang=${PAGELANGUAGE} -V dir=${PDIR} $TOC $SMART "$TMPFILE" \
 		-s ${CSS} ${CSSOVERRIDE} ${TITLE} \
 		--template ${TEMPLATE} --metadata return="" > "$FILE.html"
 
