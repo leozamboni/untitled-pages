@@ -109,9 +109,14 @@ filehasnotchanged() {
 	# return 1 means yes, needs to be changed
 	# 0 means no, doesn't need to be changed
 	f="${1}"
-	[[ ! -f "${f}" ]] && return 0
 
 	printf "Checking %s for changes... " "${f}"
+
+	if [ ! -f "${f}" ]; then
+		printf "the file doesn't even exist!\n"
+		return 0
+	fi
+
 
 	if [ -d "${f}.sha1sum" ]; then
 		printf "%s.sha1sum is a directory, not a file.\n" "${f}"
@@ -546,7 +551,7 @@ buildsite() {
 	# For example: if a template changed, purge the whole site and re-build
 	FILELIST=$(mktemp -t untitled_www.XXXXXXXXXX)
 	printf "%s\n" "${TEMPLATE}" > "${FILELIST}"
-	printf "%s\n" "${SITEDIR}/site.cfg" >> "${FILELIST}"
+	printf "%s/site.cfg\n" "${SITEDIR}" >> "${FILELIST}"
 	for f in $(cat "${FILELIST}"); do
 		if [ ! -f "${f}" ]; then
 			printf "%s missing for site '%s'. Skipping this site\n" \
@@ -568,6 +573,7 @@ buildsite() {
 			"${SITEDIR}"
 		./clean "${SITENAME}"
 	fi
+	SITECHANGED="n"
 
 	TITLE="$(getConfigValue "${SITEDIR}/site.cfg" "TITLE")"
 	if [ "${TITLE}" = "" ]; then TITLE="-T untitled_output"; fi
