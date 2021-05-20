@@ -165,10 +165,9 @@ mkhtml() {
 	fi
 
 	# e.g. file.md is english and file.ru.md is russian
-	# TODO: make this less buggy. this hack means there can only be 2 dots
-	# in the file path, and that it must conform to this standard
-	PAGELANGUAGE="${FILE##*.}"
-	if [ "${PAGELANGUAGE}" = "${FILE}" ]; then
+	REALPAGE="${FILE##*/}"
+	PAGELANGUAGE="${REALPAGE##*.}"
+	if [ "${PAGELANGUAGE}" = "${REALPAGE}" ]; then
 		PAGELANGUAGE="en"
 	else
 		FILE="${FILE%.${PAGELANGUAGE}}"
@@ -182,6 +181,10 @@ mkhtml() {
 	FOOTERFILE=""
 	if [ -f "${FILE}.footer" ]; then
 		FOOTERFILE="${FILE}.footer"
+	elif [ "${PAGELANGUAGE}" != "en" ]; then
+		if [ -f "${FILE}.${PAGELANGUAGE}.footer" ]; then
+			FOOTERFILE="${FILE}.${PAGELANGUAGE}.footer"
+		fi
 	fi
 
 	# Backlink text for each page. This helps with site navigation
@@ -198,12 +201,20 @@ mkhtml() {
 	NAVFILE=""
 	if [ -f "${FILE}.nav" ]; then
 		NAVFILE="${FILE}.nav"
+	elif [ "${PAGELANGUAGE}" != "en" ]; then
+		if [ -f "${FILE}.${PAGELANGUAGE}.nav" ]; then
+			NAVFILE="${FILE}.${PAGELANGUAGE}.nav"
+		fi
 	fi
 
 	# Allow a given page to override the default template
 	TEMPLATE=""
 	if [ -f "${FILE}.template" ]; then
 		TEMPLATE="${FILE}.template"
+	elif [ "${PAGELANGUAGE}" != "en" ]; then
+		if [ -f "${FILE}.${PAGELANGUAGE}.template" ]; then
+			TEMPLATE="${FILE}.${PAGELANGUAGE}.template"
+		fi
 	fi
 
 	# Allow a given page to override the default CSS
