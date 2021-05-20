@@ -9,20 +9,8 @@ Introduction
 You can download the latest version of Untitled here:\
 <https://untitled.vimuser.org/>
 
-Refer to the above URL for documentation aswell. This README is merely an
-introductory text.
-
-If all you want to do is write code, and have a website documenting your
-software, then `untitled` is for you! This software originally had another name
-but it was decided that `untitled` is a perfect name for this very generic,
-lightweight and very, very simple software.
-
-It is named *untitled static site generator* because of a lack of desire to
-come up with a better name. It is one in a million. There are many other
-static site generators. Untitled is not the first, and it will not be the last!
-
-Introduction
-============
+For documentation, please also refer to the above website URL. This README is
+merely an introductory text, *based on* the homepage of the above website.
 
 Untitled is a static site generator. It is written in Bash, and it runs
 pandoc to generate HTML pages. It is a *multi-site* static site generator.
@@ -50,8 +38,6 @@ websites! Here are some websites that already are built using `untitled`:
 * <https://untitled.vimuser.org/> (official homepage of the untitled static
   site generator!)
 * <https://libreboot.org/>
-* <https://vimuser.org/>
-* <https://blog.vimuser.org/>
 
 Actually, it's not new at all. This static site generator was originally
 written for the [Libreboot project website](https://libreboot.org/) in 2017,
@@ -88,67 +74,39 @@ Untitled is designed to be stupidly simple. You need:
   in a chrooted environment. This is for security purposes.
 * RECOMMENDED: disable symlinks in your web server, for any website built using
   this software.
-* Willingness to use incredibly fragile, unstable code to power your website.
-  This static site generator is very experimental. It is used by its lead
-  developer, Leah Rowe, to generate
-  the [Libreboot website](https://libreboot.org), but it is HIGHLY recommended
-  that you read the code for Untitled, and familiarize yourself with it fully,
-  before you decide to use it. It's not in a state right now where you can just
-  use it. In all likelihood, it's going to annoy you in some way by not doing
-  something you want, so you'll have to tweak it. Patches welcome!
 
-NOTE FOR HOSTING PROVIDERS: DO NOT USE THIS SOFTWARE YET! It's very unstable,
-and highly experimental. The authors of this software are not responsible if
-your website gets nuked.
+Security notes
+==============
 
-It is assumed that you have a BASH shell on the server you're using to host
-sites on. E.g. physical access, SSH, serial console, whatever.
+USE THIS SOFTWARE AT YOUR OWN RISK.
 
-There are actually plenty of other programs already that can let you host a
-website with Markdown files. Untitled is yet another static site generator.
-It is Leah's pet project, but one day it might grow into something great.
+It is HIGHLY recommended that you run Untitled in a heavily chrooted
+environment, if you're using this on a production web server.
+This is good advice anyway, but Untitled is very new software. Every effort has
+been made to make it safe to use, but it *does* need to be properly audited.
 
-Security warnings
-=================
+It is also recommended that you disable symlinks in your web server.
 
-Disable symlinks in your web server.
+Untitled only allows sites to be processed under `www/` in the
+git clone of whatever Untitled version you're using. Untitled currently has no
+formal releases, but there is a Git repository.
+IF UNTITLED ALLOWS ANYTHING TO BE PROCESSED OUTSIDE OF `www/`, THEN IT'S A BUG
+AND NEEDS TO BE FIXED.
 
-Also, the logic is barely audited. It is very hastily written, to meet a goal.
-This software was only very recently released (17 May 2021 was the day this
-software became available on the internet); as such, it is to be considered
-alpha (even pre-alpha) quality.
+Additionally, untitled does not permit operating on symlinked files or
+directories. It will actively try to prevent this from happening. This is for
+security purposes.
 
-TO BO CLEAR: if you value your data, do not use this software in production.
-In it's current state, this software is *poorly written*.
+If you're running a public website in a Git repository, you might have lots of
+people with push access to that website, and you might have Untitled running in
+a crontab. What if someone pushed a symlink? If you have symlinks disabled in
+your web server, that's great! However, what about untitled when it runs
+locally? A wily individual could put a Markdown file in your repository, and
+then that Markdown file points to something you don't want to be shown to the
+world, and that file would be "converted to HTML".
 
-ONE MORE TIME:
-
-DO NOT USE this software in production, unless you're either insane or you know
-how to avoid common security pitfalls, because this software is *not* secure.
-At the very least, you should be running this in a chrooted environment.
-If you're Leah Rowe, everything in this paragraph is true.
-
-NOTE: disabling symlinks in your web server only affects what the public can
-access, but `untitled` currently doesn't check for symlinks when *building*
-a Markdown file into HTML locally. This means that you SHOULD NOT USE IT
-unless you can control accesses to the repository where your markdown files
-are hosted.
-
-So for instance, if you're a software project with lots of people having push
-access to a Git repository hosting your documentation site, don't have untitled
-automatically run, because a real bastard could potentially pwn you.
-
-This notice will be removed when this bug is fixed.
-
-Basically, don't run it automatically. If you're the only one with push access
-to your repositories and/or websites, and can absolutely control everything,
-it's safe, but please DO be vigilant against this.
-
-Anyone with basic knowledge of security (or the concept of opsec) knows this,
-so there's no point in hiding it.
-
-There *is* a workaround: run `untitled` in a chroot environment, on your server.
-A properly configured chroot environment should be OK.
+This is why symlinks are disabled in Untitled. If you find that symlinks are
+functional, in any way, it's a bug and it needs to be fixed!
 
 Getting started
 ===============
