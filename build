@@ -109,17 +109,28 @@ filehasnotchanged() {
 	# return 1 means yes, needs to be changed
 	# 0 means no, doesn't need to be changed
 	f="${1}"
-
 	[[ ! -f "${f}" ]] && return 0
-	[[ -d "${f}.sha1sum" ]] && return 1
+
+	printf "Checking %s for changes... " "${f}"
+
+	if [ -d "${f}.sha1sum" ]; then
+		printf "%s.sha1sum is a directory, not a file.\n" "${f}"
+		return 1
+	fi
 
 	if [ ! -f "${f}.sha1sum" ]; then
+		printf "%s.sha1sum is missing. Creating it now.\n" "${f}" "${f}"
 		sha1sum "${f}" > "${f}.sha1sum"
 		return 1
 	fi
 
 	checksum="$(sha1sum "${f}")"
-	[[ "$(cat "${f}.sha1sum")" = "${checksum}" ]] && return 0
+	if [ "$(cat "${f}.sha1sum")" = "${checksum}" ]; then
+		printf "no changes detected.\n"
+		return 0
+	fi
+
+	printf "%s has changed. Updating %s.sha1sum now.\n" "${f}" "${f}"
 	printf "%s\n" "${checksum}" > "${f}.sha1sum"
 	return 1
 }
@@ -548,11 +559,7 @@ buildsite() {
 		[[ -f "${f}" ]] && printf "%s\n" "${f}" >> "${FILELIST}"
 	done
 	for f in $(cat "${FILELIST}"); do
-		filehasnotchanged "${f}" || \
-		( \
-			SITECHANGED="y" \
-			printf "%s has changed\n" "${f}" \
-		)
+		filehasnotchanged "${f}" || SITECHANGED="y"
 	done
 	rm -f "${FILELIST}"
 
