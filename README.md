@@ -185,40 +185,91 @@ See:
 * <https://www.gnu.org/software/bash/>
 * <https://pandoc.org/>
 
-Generate a website
-------------------
+Generate an entire website
+--------------------------
+
+For security reasons, Untitled will only operate on sites under `www/sitename/`
+where `sitename` can be anything.
 
 To interact with `untitled`, your current working directory should be the main
 directory *of untitled*, *not your website*. In that directory, the file named
 `build` and the file named `clean` will exist.
 
+You can have untitled go through an entire website and, if it detects that such
+an action is needed, it will build each page. It will check whether a page
+needs to be built. For example, if it was already built and no changes were
+made, it will skip that page. It does this, using one of two hashing algorithms:
+`xxhsum` or `sha1sum`.
+
+xxhsum is much faster than sha1sum, so this is used if available. Untitled will
+fall back to using sha1sum if xxhsum is unavailable. Files ending in `.hash`
+are created and updated, for each page.
+
 For a given directory name under `www/`, do this:
 
-    ./build www/directoryname
+    ./build sites www/directoryname
 
 You can also do:
 
-    ./build directoryname
+    ./build sites directoryname
 
 For example, if your website was hosted at www/foobar:
 
-    ./build foobar
+    ./build sites foobar
 
 This will only work if your website is set up correctly. Look at the example
 website in `www-example/` and read the sections below.
 
 To build *all* available websites under `www/`, just run it without an argument:
 
-    ./build
+    ./build sites
 
 You can specify *multiple* websites. For example:
 
-    ./build blogsite catblogsite
+    ./build sites blogsite catblogsite
 
 In this example, the following sites would be built:
 
 * `www/blogsite`
 * `www/catblogsite`
+
+NOTE: If you simply run `./build` without any arguments, the `./build sites`
+command will be executed.
+
+Build specific pages
+--------------------
+
+These commands will only operate on pages under `www/sitename/` where `sitename`
+can be anything. This is for security reasons.
+
+If you want to save time (e.g. if you're just editing a few pages), you can
+skip checking the entire site (or sites) and update just that page. Use this
+command:
+
+    ./build pages www/sitename/site/path/to/page.md
+
+You can also do:
+
+    ./build pages sitename/path/to/page.md
+
+Untitled will automatically correct the path, if `www/` and `site/` are missing
+from the path. For example, to update the homepage:
+
+    ./build pages sitename/index.md
+
+You can specify multiple pages, *on multiple sites*. For example:
+
+    ./build pages joebloggsandhisdog/index.md janedoesblog/news/guitar.md
+
+NOTE: the `mksitemap` and `mknews` functions are not automatically executed
+when running these commands.
+
+NOTE: if you run `./build pages` without specifying any paths to pages, then
+the `./build sites` command will be executed instead. However, if you specify
+paths and none exist, nothing will happen.
+
+NOTE: If you simply run `./build` without any arguments, the `./build sites`
+command will be executed.
 
 Cleaning up
 -----------

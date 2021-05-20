@@ -656,6 +656,64 @@ buildsite() {
 	fi
 }
 
+buildpage() {
+	[[ $# -lt 1 ]] && return 0
+
+	MDFILE="${1}"
+	MDFILE="${MDFILE#/}"
+	MDFILE="${MDFILE#./}"
+	MDFILELOCAL="${MDFILE##*/}"
+
+	[[ "${MDFILE%.md}" = "${MDFILE}" ]] && return 0
+
+	# path translation
+	# e.g. libreboot/index.md becomes www/libreboot/site/index.md
+	# e.g. libreboot/site/index.md becomes www/libreboot/site/index.md
+	# e.g. www/libreboot/index.md becomes www/libreboot/site/index.md
+	# in all cases, the correct path is: www/libreboot/site/index.md
+	MDFILE="${MDFILE#www/}"
+	SITESITE="${MDFILE#*/}"
+	[[ "${SITESITE#site/}" = "${SITESITE}" ]] && SITESITE="site/${SITESITE}"
+	MDFILE="www/${MDFILE%%/*}/${SITESITE}"
+
+	[[ ! -f "${MDFILE}" ]] && return 0
+	[[ -L "${MDFILE}" ]] && return 0
+
+	# Do not allow if the file is contained within a symlinked directory
+	absolutepath="$(pwd)/${MDFILE}"
+	absolutepath_readlink="$(readlink -f "${absolutepath}" 2>&1)"
+	if [ "${absolutepath_readlink}" != "${absolutepath}" ]; then
+		return 0
+	fi
+
+	SITEDIR="${MDFILE#www/}"
+	[[ "${SITEDIR}" = "${MDFILE}" ]] && return 0
+	SITENAME="${SITEDIR%%/*}"
+	[[ "${SITENAME}" = "${SITEDIR}" ]] && return 0
+	SITEDIR="www/${SITENAME}"
+	[[ ! -d "${SITEDIR}" ]] && return 0
+
+	printf "\nPage: %s\n" "${MDFILE}"
+	printf "Processing page in site directory: %s/site/\n" "${SITEDIR}"
+
+	if [ ! -f "${SITEDIR}/site.cfg" ]; then
+		printf "%s missing for site '%s'. Skipping this page\n" \
+			"${f}" "${SITEDIR}"
+		return 0
+	fi
+
+	DOMAIN="$(getConfigValue "${SITEDIR}/site.cfg" "DOMAIN")"
+	# it doesn't matter if this is empty
+
+	TITLE="$(getConfigValue "${SITEDIR}/site.cfg" "TITLE")"
+	if [ "${TITLE}" = "" ]; then TITLE="-T untitled_output"; fi
+
+	CSS="$(getConfigValue "${SITEDIR}/site.cfg" "CSS")"
+	# optional. if empty, there just won't be any css
+
+	mkhtml "${MDFILE}" "${SITEDIR##*/}" "${TITLE}" "${CSS}"
+}
+
 if [ -f "www" ]; then
 	printf "untitled error: www is a file. should be a directory. exiting.\n"
 	exit 1
@@ -669,21 +727,50 @@ if [ -L "www" ]; then
 	exit 1
 fi
 
-if [ $# -gt 0 ]; then
-	for sitename in "${@}"; do
+mode=""
+
+if [ $# -lt 1 ]; then
+	mode="sites"
+else
+	mode="${1}"
+	shift 1
+fi
+
+if [ "${mode}" = "pages" ] && [ $# -lt 1 ]; then
+	mode="sites"
+fi
+
+if [ "${mode}" = "sites" ]; then
+	if [ $# -gt 0 ]; then
+		for sitename in "${@}"; do
+			startdate=$(date +%s%N | cut -b1-13)
+			buildsite "www/${sitename##*/}"
+			enddate=$(date +%s%N | cut -b1-13)
+			endtime=$(( enddate - startdate ))
+			printf "time: %d milliseconds\n" "${endtime}"
+		done
+	else
+		for sitedir in www/*; do
+			startdate=$(date +%s%N | cut -b1-13)
+			buildsite "${sitedir}"
+			enddate=$(date +%s%N | cut -b1-13)
+			endtime=$(( enddate - startdate ))
+			printf "time: %d milliseconds\n" "${endtime}"
+		done
+	fi
+elif [ "${mode}" = "pages" ]; then
+	for pagepath in "$@"; do
 		startdate=$(date +%s%N | cut -b1-13)
-		buildsite "www/${sitename##*/}"
+
+		buildpage "${pagepath}"
+
 		enddate=$(date +%s%N | cut -b1-13)
 		endtime=$(( enddate - startdate ))
 		printf "time: %d milliseconds\n" "${endtime}"
 	done
 else
-	for sitedir in www/*; do
-		startdate=$(date +%s%N | cut -b1-13)
-		buildsite "${sitedir}"
-		enddate=$(date +%s%N | cut -b1-13)
-		endtime=$(( enddate - startdate ))
-		printf "time: %d milliseconds\n" "${endtime}"
-	done
+	printf "error: unrecognized command: %s\n\n" "${mode}"
+	printf "available commands:\n\tsites\n\tpages\n\n"
+	printf "Consult the documentation to understand these commands.\n"
+	exit 1
 fi
-
