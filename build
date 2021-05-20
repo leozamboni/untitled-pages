@@ -33,6 +33,17 @@ SITECHANGED="n"
 hasher="xxhsum"
 which xxhsum || hasher="sha1sum"
 
+hasher=""
+for hashprogram in xxhsum sha1sum; do
+	which ${hashprogram} || continue
+	hasher="${hashprogram}"
+	break
+done
+if [ "${hasher}" = "" ]; then
+	printf "Please install xxhsum or sha1sum.\n"
+	exit 1
+fi
+
 printf "hashing program used: %s\n" "${hasher}"
 
 # usage: title file
