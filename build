@@ -20,14 +20,6 @@
 [ "x${DEBUG+set}" = 'xset' ] && set -v
 set -u -e
 
-# TODO: make printf's into pages come from separate files
-# TODO: make those messages configurable
-# TODO: support translated versions of those messages
-# TODO: (based on above todo) improve the language support
-# TODO: support tracking changes to a site, based on a git repository
-#       if that repository is present. otherwise if the site isn't in a git
-#       repository, the current behaviour should still be used
-
 SITECHANGED="n"
 
 hasher=""
@@ -78,7 +70,6 @@ meta() {
 }
 
 # usage: rss_header
-# TODO: fix this cunsed code. RSS code is cursed
 rss_header() {
 	BLOGTITLE="${1}"
 	DOMAIN="${2}" # without a / at the end, but with http:// or https://
@@ -94,7 +85,6 @@ rss_header() {
 }
 
 # usage: rss_main file
-# TODO: fix this cursed code. RSS code is cursed
 rss_main() {
 	file="${1}"
 	SITEDIR="${2}"
@@ -113,7 +103,6 @@ rss_main() {
 }
 
 # usage: rss_footer
-# TODO: fix this cursed code. RSS code is cursed
 rss_footer() {
 	printf '%s\n' '</channel>'
 	printf '%s\n' '</rss>'
@@ -223,7 +212,6 @@ mkhtml() {
 		CSSOVERRIDE="--css ${URI}.css"
 	fi
 
-	# TODO: fix this cursed abomination
 	if [ "${PAGELANGUAGE}" != "en" ]; then
 		FILE="${FILE}.${PAGELANGUAGE}"
 		URI="${URI}.${PAGELANGUAGE}"
@@ -257,8 +245,6 @@ mkhtml() {
 
 	TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
 
-	# TODO: fix this cursed abomination. this code is shit
-	# it looks like assembly code, and it's very fragile and BARELY WORKS
 	firstchar=$(head -c 1 ${1})
 	if [[ "${firstchar}" == "%" ]]; then
 		TMPFILE2=$(mktemp -t untitled_www.XXXXXXXXXX)
@@ -325,8 +311,6 @@ mkhtml() {
 
 	# change out .md -> .html
 	# but not for external links
-	# TODO: fix bug: just ".md" written on a page will still be converted
-	# (which means that it's not possible to talk about .md file extensions)
 	sed -i -e \
 		'/\/\//!{s/\.md\(#[a-zA-Z0-9_-]*\)\?\([])]*\)/.html\1\2/g}' \
 		"$TMPFILE"
