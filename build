@@ -38,12 +38,15 @@ printf "hashing program used: %s\n" "${hasher}"
 # usage: title file
 title() {
 	firstchar=$(head -c 1 ${1})
+	firstthreechars=$(head -c 3 ${1})
 	outputstring=""
 	if [ "${firstchar}" = "%" ] || [ "${firstchar}" = "#" ]; then
 		outputstring="$(sed -n 1p "${1}" | sed -e s-^..--)"
-	else
+	elif [ "${firstthreechars}" = "---" ]; then
 		outputstring="$(sed -n 2p "${1}" | sed -e s-^..--)"
 		outputstring="${outputstring#* }"
+	else
+		outputstring="$(head -n1 "${1}")"
 	fi
 	printf "%s\n" "${outputstring}"
 	return 0
@@ -245,7 +248,11 @@ mkhtml() {
 
 	TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
 
+	date=""
+	author=""
+
 	firstchar=$(head -c 1 ${1})
+	firstthreechars=$(head -c 3 ${1})
 	if [ "${firstchar}" = "#" ]; then
 		filetitle="$(title "${1}")"
 		TMPFILE2=$(mktemp -t untitled_www.XXXXXXXXXX)
@@ -272,11 +279,20 @@ mkhtml() {
 		rm -f "$TMPFILE2"
 
 		pagetext="$(tail -n+4 ${1})"
-	else
+	elif [ "${firstthreechars}" = "---" ]; then
 		title="$(head -n4 ${1})"
 		author=""
 		date=""
 		pagetext="$(tail -n+5 ${1})"
+	else
+		printf "WARNING: no title detected. defaulting to first line as title\n"
+		filetitle="$(title "${1}")"
+		TMPFILE2=$(mktemp -t untitled_www.XXXXXXXXXX)
+		head -n1 title.example > "${TMPFILE2}"
+		printf "title: %s\n" "${filetitle}" >> "${TMPFILE2}"
+		tail -n-2 title.example	>> "${TMPFILE2}"
+		title="$(cat "${TMPFILE2}")"
+		rm -f "${TMPFILE2}"
 	fi
 
 	printf "%s\n" "${title}" > "$TMPFILE"
