@@ -261,6 +261,7 @@ mkhtml() {
 		tail -n-2 title.example	>> "${TMPFILE2}"
 		title="$(cat "${TMPFILE2}")"
 		rm -f "${TMPFILE2}"
+		pagetext="$(tail -n+2 "${1}")"
 	elif [ "${firstchar}" = "%" ]; then
 		TMPFILE2=$(mktemp -t untitled_www.XXXXXXXXXX)
 
@@ -293,6 +294,8 @@ mkhtml() {
 		tail -n-2 title.example	>> "${TMPFILE2}"
 		title="$(cat "${TMPFILE2}")"
 		rm -f "${TMPFILE2}"
+
+		pagetext="$(tail -n+2 "${1}")"
 	fi
 
 	printf "%s\n" "${title}" > "$TMPFILE"
