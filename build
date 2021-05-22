@@ -24,7 +24,7 @@ SITECHANGED="n"
 
 hasher=""
 for hashprogram in xxhsum sha1sum; do
-	which ${hashprogram} || continue
+	which ${hashprogram} > /dev/null 2>&1 || continue
 	hasher="${hashprogram}"
 	break
 done
