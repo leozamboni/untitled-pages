@@ -39,7 +39,7 @@ printf "hashing program used: %s\n" "${hasher}"
 title() {
 	firstchar=$(head -c 1 ${1})
 	outputstring=""
-	if [[ "${firstchar}" == "%" ]]; then
+	if [ "${firstchar}" = "%" ] || [ "${firstchar}" = "#" ]; then
 		outputstring="$(sed -n 1p "${1}" | sed -e s-^..--)"
 	else
 		outputstring="$(sed -n 2p "${1}" | sed -e s-^..--)"
@@ -246,7 +246,15 @@ mkhtml() {
 	TMPFILE=$(mktemp -t untitled_www.XXXXXXXXXX)
 
 	firstchar=$(head -c 1 ${1})
-	if [[ "${firstchar}" == "%" ]]; then
+	if [ "${firstchar}" = "#" ]; then
+		filetitle="$(title "${1}")"
+		TMPFILE2=$(mktemp -t untitled_www.XXXXXXXXXX)
+		head -n1 title.example > "${TMPFILE2}"
+		printf "title: %s\n" "${filetitle}" >> "${TMPFILE2}"
+		tail -n-2 title.example	>> "${TMPFILE2}"
+		title="$(cat "${TMPFILE2}")"
+		rm -f "${TMPFILE2}"
+	elif [ "${firstchar}" = "%" ]; then
 		TMPFILE2=$(mktemp -t untitled_www.XXXXXXXXXX)
 
 		title="$(head -n3 ${1})"
