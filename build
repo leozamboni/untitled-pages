@@ -280,7 +280,7 @@ mkhtml() {
 	fi
 
 	if [ "${author}" != "" ] && [ "${date}" != "" ]; then
-		BACKLINK="News article published on ${date% } by ${author#% }. [Return to index](./)"
+		BACKLINK="News article published on ${date#% } by ${author#% }. [Return to index](./)"
 	fi
 	if [ "${BACKLINK}" != "" ]; then
 		printf "\n%s\n" "${BACKLINK}" >> "${TMPFILE}"
