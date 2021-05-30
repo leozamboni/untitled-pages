@@ -650,10 +650,6 @@ buildsite() {
 		return 0
 	fi
 	TESTDIR="${TESTDIR##$(pwd)/${SITEDIR}/site/}"
-	if [ ! -d "${SITEDIR}/site/${TESTDIR}" ]; then
-		printf "BLOGDIR does not exist in %s. skipping this site\n" "${SITEDIR}"
-		return 0
-	fi
 
 	for mdfile in $(find -L ${SITEDIR}/site/ -name '*.md'); do
 		mkhtml "${mdfile}" "${SITEDIR##*/}" "${TITLE}" "${CSS}"
@@ -661,7 +657,11 @@ buildsite() {
 
 	if [ "${SITECHANGED}" = "y" ]; then
 		mksitemap "${SITEDIR}" "${TITLE}" "${CSS}"
-		mknews "${SITEDIR}" "${SITENAME}" "${BLOGDIR}" "${DOMAIN}" "${TITLE}" "${CSS}"
+		if [ ! -d "${SITEDIR}/site/${TESTDIR}" ]; then
+			printf "BLOGDIR does not exist in %s. not building news sections for this site\n" "${SITEDIR}"
+		else
+			mknews "${SITEDIR}" "${SITENAME}" "${BLOGDIR}" "${DOMAIN}" "${TITLE}" "${CSS}"
+		fi
 	else
 		printf "this website has not been changed. skipping.\n"
 	fi
