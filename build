@@ -637,7 +637,7 @@ buildsite() {
 	BLOGDIR="$(getConfigValue "${SITEDIR}/site.cfg" "BLOGDIR")"
 	# optional. if not set, this will be empty, and blog will be homepage
 	TESTDIR="$(pwd)/${SITEDIR}/site/${BLOGDIR%/}"
-	if [ "$(readlink -f "${TESTDIR}" 2>&1)" != "${TESTDIR}" ]; then
+	if [ "$(readlink -f "${TESTDIR}" 2>&1)" != "${TESTDIR%/}" ]; then
 		printf "Invalid BLOGDIR in site.cfg for %s. skipping this site\n" "${SITEDIR}"
 		return 0	
 	fi
