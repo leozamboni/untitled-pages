@@ -367,10 +367,8 @@ mkhtml() {
 		done
 	fi
 	if [ "${LANGMENU}" != "" ]; then
-		DEFAULTPAGE="${FILE%.*}.md"
-		LANGNAME=$(getlangname "${DEFAULTPAGE}" "${DEFAULTLANG}")
-		DEFAULTPAGE="${DEFAULTPAGE##*/}"
-		LANGMENU="[${LANGNAME}](${DEFAULTPAGE}) | ${LANGMENU}"
+		LANGNAME=$(getlangname "${FILE%/*}/${DEFAULTPAGE}.md" "${DEFAULTLANG}")
+		LANGMENU="[${LANGNAME}](${DEFAULTPAGE}.md) | ${LANGMENU}"
 	fi
 	if [ "${LANGMENU}" != "" ]; then
 		printf "\n%s\n" "${LANGMENU}" >> "${TMPFILE}"
