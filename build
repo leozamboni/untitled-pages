@@ -357,11 +357,15 @@ mkhtml() {
 
 	# insert the language select menu
 	LANGMENU=""
-	for page in "${FILE%.*}".*.md; do
-		if [ ! -f "${page}" ]; then continue; fi
-		LANGNAME=$(getlangname "${page}" "${DEFAULTLANG}")
-		LANGMENU="${LANGMENU} | [${LANGNAME}](${page##*/})"
-	done
+	DEFAULTPAGE="${FILE##*/}"
+	DEFAULTPAGE="${DEFAULTPAGE%.*}"
+	if [ "${DEFAULTPAGE}" != "" ]; then
+		for page in "${FILE%/*}/${DEFAULTPAGE}".*.md; do
+			if [ ! -f "${page}" ]; then continue; fi
+			LANGNAME=$(getlangname "${page}" "${DEFAULTLANG}")
+			LANGMENU="${LANGMENU} | [${LANGNAME}](${page##*/})"
+		done
+	fi
 	if [ "${LANGMENU}" != "" ]; then
 		DEFAULTPAGE="${FILE%.*}.md"
 		LANGNAME=$(getlangname "${DEFAULTPAGE}" "${DEFAULTLANG}")
