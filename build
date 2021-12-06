@@ -22,6 +22,15 @@ set -u -e
 
 # TODO: make untitled work on subdirectories. e.g. https://website.com/~user/
 
+# TODO: speed optimization: don't do checksums at all. use dates instead
+
+# TODO: gemtext support
+
+# TODO: write an optimized C replacement for pandoc markdown->html conversion
+#		pandoc is written is haskell, and C will probably be faster
+
+# TODO: ensure that /tmp is a tmpfs, and recommend this in the documentation
+
 SITECHANGED="n"
 
 hasher=""
@@ -140,6 +149,35 @@ filehasnotchanged() {
 
 	printf "%s\n" "${checksum}" > "${f}.hash"
 	return 1
+}
+
+getlangname() {
+	FILE="${1%.md}" # path to markdown file
+	DEFAULTLANG="${2}"
+
+	REALPAGE="${FILE##*/}"
+	PAGELANG="${REALPAGE##*.}"
+
+	if [ "${PAGELANG}" = "${REALPAGE}" ]; then
+		PAGELANG="${DEFAULTLANG}"
+	fi
+
+	STRINGSCFGPATH="lang/${PAGELANG}/strings.cfg"
+
+	if [ ! -f "${STRINGSCFGPATH}" ]; then
+		printf "%s\n" "${PAGELANG}"
+		return 0
+	fi
+
+	LANGNAME="$(getConfigValue "${STRINGSCFGPATH}" "LANGNAME")"
+
+	if [ "${LANGNAME}" != "" ]; then
+		printf "%s\n" "${LANGNAME}"
+		return 0
+	fi
+
+	printf "%s\n" "${LANGNAME}"
+	return 0
 }
 
 # convert pandoc-markdown file into html, using a template file
@@ -315,6 +353,23 @@ mkhtml() {
 		NAVFILECONTENTS="$(cat "${NAVFILE}")"
 		printf "\n<div class='nav'>\n%s\n</div>\n" \
 			"${NAVFILECONTENTS}" >> "${TMPFILE}"
+	fi
+
+	# insert the language select menu
+	LANGMENU=""
+	for page in "${FILE%.*}".*.md; do
+		if [ ! -f "${page}" ]; then continue; fi
+		LANGNAME=$(getlangname "${page}" "${DEFAULTLANG}")
+		LANGMENU="${LANGMENU} | [${LANGNAME}](${page##*/})"
+	done
+	if [ "${LANGMENU}" != "" ]; then
+		DEFAULTPAGE="${FILE%.*}.md"
+		LANGNAME=$(getlangname "${DEFAULTPAGE}" "${DEFAULTLANG}")
+		DEFAULTPAGE="${DEFAULTPAGE##*/}"
+		LANGMENU="[${LANGNAME}](${DEFAULTPAGE}) | ${LANGMENU}"
+	fi
+	if [ "${LANGMENU}" != "" ]; then
+		printf "\n%s\n" "${LANGMENU}" >> "${TMPFILE}"
 	fi
 
 	if [ "${BACKLINK}" != "" ]; then
