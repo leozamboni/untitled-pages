@@ -31,6 +31,15 @@ set -u -e
 
 # TODO: ensure that /tmp is a tmpfs, and recommend this in the documentation
 
+# TODO: in mkhtml, allow auto-nav if no .nav file specified
+#		but disable this by default, to maintain old behaviour
+#		make it configurable in site.cfg
+
+# TODO: next/previous links on news pages
+
+# TODO: allow per-directory .include overrides, including for translations
+#		right now, only global ones and per-page ones are supported
+
 SITECHANGED="n"
 
 hasher=""
@@ -222,7 +231,8 @@ mkhtml() {
 	FOOTERFILE=""
 	if [ -f "${FILE}.footer" ]; then
 		FOOTERFILE="${FILE}.footer"
-	elif [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
+	fi
+	if [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
 		if [ -f "${FILE}.${PAGELANGUAGE}.footer" ]; then
 			FOOTERFILE="${FILE}.${PAGELANGUAGE}.footer"
 		fi
@@ -242,7 +252,8 @@ mkhtml() {
 	NAVFILE=""
 	if [ -f "${FILE}.nav" ]; then
 		NAVFILE="${FILE}.nav"
-	elif [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
+	fi
+	if [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
 		if [ -f "${FILE}.${PAGELANGUAGE}.nav" ]; then
 			NAVFILE="${FILE}.${PAGELANGUAGE}.nav"
 		fi
@@ -252,7 +263,8 @@ mkhtml() {
 	TEMPLATE=""
 	if [ -f "${FILE}.template" ]; then
 		TEMPLATE="${FILE}.template"
-	elif [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
+	fi
+	if [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
 		if [ -f "${FILE}.${PAGELANGUAGE}.template" ]; then
 			TEMPLATE="${FILE}.${PAGELANGUAGE}.template"
 		fi
@@ -262,6 +274,16 @@ mkhtml() {
 	CSSOVERRIDE=""
 	if [ -f "${FILE}.css" ]; then
 		CSSOVERRIDE="--css ${URI}.css"
+	fi
+	# DO NOT override the main override! add it instead
+	if [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
+		if [ -f "${FILE}.${PAGELANGUAGE}.css" ]; then
+			if [ "${CSSOVERRIDE}" != "" ]; then
+				CSSOVERRIDE="${CSSOVERRIDE} --css ${URI}.${PAGELANGUAGE}.css"
+			else
+				CSSOVERRIDE="--css ${URI}.${PAGELANGUAGE}.css"
+			fi
+		fi
 	fi
 
 	if [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
@@ -278,17 +300,37 @@ mkhtml() {
 		return 0
 	fi
 
-	if [ -f "${SITEDIR}/site/footer.include" ] \
-			&& [ "${FOOTERFILE}" = "" ]; then
-		FOOTERFILE="${SITEDIR}/site/footer.include"
+	if [ "${FOOTERFILE}" = "" ]; then
+		if [ -f "${SITEDIR}/site/footer.include" ]; then
+			FOOTERFILE="${SITEDIR}/site/footer.include"
+		fi
+		if [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
+			if [ -f "${SITEDIR}/site/footer.${PAGELANGUAGE}.include" ]; then
+				FOOTERFILE="${SITEDIR}/site/footer.${PAGELANGUAGE}.include"
+			fi
+		fi
 	fi
 
-	if [ -f "${SITEDIR}/site/nav.include" ] && [ "${NAVFILE}" = "" ]; then
-		NAVFILE="${SITEDIR}/site/nav.include"
+	if [ "${NAVFILE}" = "" ]; then
+		if [ -f "${SITEDIR}/site/nav.include" ]; then
+			NAVFILE="${SITEDIR}/site/nav.include"
+		fi
+		if [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
+			if [ -f "${SITEDIR}/site/nav.${PAGELANGUAGE}.include" ]; then
+				NAVFILE="${SITEDIR}/site/nav.${PAGELANGUAGE}.include"
+			fi
+		fi
 	fi
 
 	if [ "${TEMPLATE}" = "" ]; then
-		TEMPLATE="${SITEDIR}/site/template.include"
+		if [ -f "${SITEDIR}/site/template.include" ]; then
+			TEMPLATE="${SITEDIR}/site/template.include"
+		fi
+		if [ "${PAGELANGUAGE}" != "${DEFAULTLANG}" ]; then
+			if [ -f "${SITEDIR}/site/template.${PAGELANGUAGE}.include" ]; then
+				TEMPLATE="${SITEDIR}/site/template.${PAGELANGUAGE}.include"
+			fi
+		fi
 	fi
 
 	# The news and sitemap function need to know this
@@ -371,6 +413,7 @@ mkhtml() {
 		LANGMENU="[${LANGNAME}](${DEFAULTPAGE}.md) | ${LANGMENU}"
 	fi
 	if [ "${LANGMENU}" != "" ]; then
+		# TODO: display "select language" text
 		printf "\n%s\n" "${LANGMENU}" >> "${TMPFILE}"
 	fi
 
@@ -680,7 +723,7 @@ buildsite() {
 			return 0
 		fi
 	done
-	for f in "${SITEDIR}/site/footer.include" "${SITEDIR}/site/nav.include"; do
+	for f in "${SITEDIR}"/site/footer*.include "${SITEDIR}"/site/nav*.include; do
 		if [ -f "${f}" ]; then
 			printf "%s\n" "${f}" >> "${FILELIST}"
 		fi
