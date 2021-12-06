@@ -381,6 +381,8 @@ mkhtml() {
 
 	PDIR="$(getConfigValue "${STRINGSCFGPATH}" "PDIR")"
 
+	printf "Generating '%s.html'\n" "${FILE}"
+
 	# chuck through pandoc
 	#
 	# $CSS must not be quoted, otherwise pandoc interprets '--css /headercenter.css'
@@ -394,8 +396,6 @@ mkhtml() {
 	sed -i \
 		-e 's_^<h\([123]\) id="\(.*\)">\(.*\)</h\1>_<div class="h"><h\1 id="\2">\3</h\1><a aria-hidden="true" href="#\2">[link]</a></div>_' \
 		"$FILE.html"
-
-	printf "Generating '%s.html'\n" "${FILE}"
 
 	# clean up temporary file
 	rm -f "$TMPFILE"
