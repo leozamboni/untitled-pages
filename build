@@ -185,7 +185,7 @@ getlangname() {
 		return 0
 	fi
 
-	printf "%s\n" "${LANGNAME}"
+	printf "%s\n" "${PAGELANG}"
 	return 0
 }
 
