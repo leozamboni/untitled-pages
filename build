@@ -20,9 +20,20 @@
 [ "x${DEBUG+set}" = 'xset' ] && set -v
 set -u -e
 
-# TODO: make untitled work on subdirectories. e.g. https://website.com/~user/
+# TODO: speed optimization: use ***GIT*** to detect site changes.
+#		init .git in www/ but already have a .gitignore (part of
+#		untitled) in there, which only allows .md files. that way,
+#		git add -A . will always, always only add .md files. then
+#		git-whatchanged can be used, always, to just detect changes
+#	one thing:
+#		it is not possible, using this method, to detect all changes.
+#		for example, .include files (and their per-page equivalents)
+#		so on some files, modification dates will still be used
 
-# TODO: speed optimization: don't do checksums at all. use dates instead
+# TODO: make site change detection more robust. certain things are missed
+#		AUDIT NEEDED
+
+# TODO: make untitled work on subdirectories. e.g. https://website.com/~user/
 
 # TODO: gemtext support
 
@@ -41,19 +52,6 @@ set -u -e
 #		right now, only global ones and per-page ones are supported
 
 SITECHANGED="n"
-
-hasher=""
-for hashprogram in xxhsum sha1sum; do
-	which ${hashprogram} > /dev/null 2>&1 || continue
-	hasher="${hashprogram}"
-	break
-done
-if [ "${hasher}" = "" ]; then
-	printf "Please install xxhsum or sha1sum.\n"
-	exit 1
-fi
-
-printf "hashing program used: %s\n" "${hasher}"
 
 # usage: title file
 title() {
@@ -131,7 +129,7 @@ rss_footer() {
 	printf '%s\n' '</rss>'
 }
 
-# checks sha1sum of a given file
+# uses the last modified date
 # returns 1 if the file has changed
 filehasnotchanged() {
 	# return 1 means yes, needs to be changed
@@ -142,21 +140,21 @@ filehasnotchanged() {
 		return 0
 	fi
 
-	if [ -d "${f}.hash" ]; then
+	if [ -d "${f}.date" ]; then
 		return 1
 	fi
 
-	if [ ! -f "${f}.hash" ]; then
-		${hasher} "${f}" > "${f}.hash"
+	if [ ! -f "${f}.date" ]; then
+		date -r "${f}" +%s > "${f}.date"
 		return 1
 	fi
 
-	checksum="$(${hasher} "${f}")"
-	if [ "$(cat "${f}.hash")" = "${checksum}" ]; then
+	moddate=$(date -r "${f}" +%s)
+	if [ "$(cat "${f}.date")" = "${moddate}" ]; then
 		return 0
 	fi
 
-	printf "%s\n" "${checksum}" > "${f}.hash"
+	printf "%s\n" "${moddate}" > "${f}.date"
 	return 1
 }
 

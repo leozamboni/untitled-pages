@@ -48,12 +48,12 @@ cleansite() {
 		fi
 	done
 
-	for f in $(find -L "www/${SITENAME}/site" -type f -name "*.hash"); do
+	for f in $(find -L "www/${SITENAME}/site" -type f -name "*.date"); do
 		if [ ! -f "${f}" ]; then continue; fi
 		if [ -L "${f}" ]; then continue; fi
-		if [ "${f##*/}" = "footer.include.hash" ] \
-			|| [ "${f##*/}" = "nav.include.hash" ] \
-			|| [ "${f##*/}" = "template.include.hash" ]; then
+		if [ "${f##*/}" = "footer.include.date" ] \
+			|| [ "${f##*/}" = "nav.include.date" ] \
+			|| [ "${f##*/}" = "template.include.date" ]; then
 
 			continue
 		fi
