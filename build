@@ -407,11 +407,14 @@ mkhtml() {
 		done
 	fi
 	if [ "${LANGMENU}" != "" ]; then
-		LANGNAME=$(getlangname "${FILE%/*}/${DEFAULTPAGE}.md" "${DEFAULTLANG}")
-		if [ "${DEFAULTPAGE}" = "index" ]; then
-			LANGMENU="[${LANGNAME}](./)${LANGMENU}"
-		else
-			LANGMENU="[${LANGNAME}](${DEFAULTPAGE}.md)${LANGMENU}"
+		LANGMENU="${LANGMENU# | }"
+		if [ -f "${FILE%/*}/${DEFAULTPAGE}.md" ]; then
+			LANGNAME=$(getlangname "${FILE%/*}/${DEFAULTPAGE}.md" "${DEFAULTLANG}")
+			if [ "${DEFAULTPAGE}" = "index" ]; then
+				LANGMENU="[${LANGNAME}](./) | ${LANGMENU}"
+			else
+				LANGMENU="[${LANGNAME}](${DEFAULTPAGE}.md) | ${LANGMENU}"
+			fi
 		fi
 	fi
 	if [ "${LANGMENU}" != "" ]; then
