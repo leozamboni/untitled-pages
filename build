@@ -408,7 +408,7 @@ mkhtml() {
 	fi
 	if [ "${LANGMENU}" != "" ]; then
 		LANGNAME=$(getlangname "${FILE%/*}/${DEFAULTPAGE}.md" "${DEFAULTLANG}")
-		LANGMENU="[${LANGNAME}](${DEFAULTPAGE}.md) | ${LANGMENU}"
+		LANGMENU="[${LANGNAME}](${DEFAULTPAGE}.md)${LANGMENU}"
 	fi
 	if [ "${LANGMENU}" != "" ]; then
 		# TODO: display "select language" text
