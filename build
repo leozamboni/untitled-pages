@@ -30,6 +30,9 @@ set -u -e
 #		for example, .include files (and their per-page equivalents)
 #		so on some files, modification dates will still be used
 
+# TODO: support MANIFEST.xx for translated news indexes. Individual news pages
+#		are still supported, without this change
+
 # TODO: make site change detection more robust. certain things are missed
 #		AUDIT NEEDED
 
@@ -115,11 +118,14 @@ rss_main() {
 	# render content and escape
 	htmlfile="${file%.md}.html"
 
+	PAGETITLE=$(title "${SITEDIR}/site/${BLOGDIR}${file}")
+	PAGEURL="${DOMAIN}${BLOGDIR}${htmlfile}"
+
 	printf '%s\n' '<item>'
-	printf '%s\n' "<title>$(title "${SITEDIR}/site/${BLOGDIR}${file}")</title>"
-	printf '%s\n' "<link>${DOMAIN}${BLOGDIR}${htmlfile}</link>"
+	printf '%s\n' "<title>${PAGETITLE}</title>"
+	printf '%s\n' "<link>${PAGEURL}</link>"
 	printf '%s\n' \
-	"<description>$(pandoc "${SITEDIR}/site/${BLOGDIR}${file}")</description>"
+	"<description><p>Article: ${PAGETITLE}</p><p>Web link: ${PAGEURL}</p></description>"
 	printf '%s\n' '</item>'
 }
 
