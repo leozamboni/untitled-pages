@@ -345,6 +345,7 @@ mkhtml() {
 
 	date=""
 	author=""
+#	title="Webpage" # dirty hack
 
 	firstchar=$(head -c 1 ${1})
 	firstthreechars=$(head -c 3 ${1})
@@ -494,13 +495,20 @@ mkhtml() {
 
 	printf "Generating '%s.html'\n" "${FILE}"
 
+	HTMLLINK="${MARKDOWN_LINK%.md}"
+	if [ "${HTMLLINK##*/}" = "index" ]; then
+		HTMLLINK="${HTMLLINK%/*}/"
+	else
+		HTMLLINK="${HTMLLINK}.html"
+	fi
+
 	# chuck through pandoc
 	#
 	# $CSS must not be quoted, otherwise pandoc interprets '--css /headercenter.css'
 	# as one argument, when it is actually two.
 	# Same for $TITLE
 	pandoc -V lang=${PAGELANGUAGE} -V dir=${PDIR} $TOC $SMART "$TMPFILE" \
-		-s ${CSS} ${CSSOVERRIDE} ${TITLE} \
+		-V antisocialurl="${HTMLLINK}" -s ${CSS} ${CSSOVERRIDE} ${TITLE} \
 		--template ${TEMPLATE} --metadata return="" > "$FILE.html"
 
 	# generate section title anchors as [link]
