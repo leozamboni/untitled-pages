@@ -496,6 +496,9 @@ mkhtml() {
 	printf "Generating '%s.html'\n" "${FILE}"
 
 	HTMLLINK="${MARKDOWN_LINK%.md}"
+
+	HTMLLINK="${DOMAIN}${URI##/}"
+
 	if [ "${HTMLLINK##*/}" = "index" ]; then
 		HTMLLINK="${HTMLLINK%/*}/"
 	else
