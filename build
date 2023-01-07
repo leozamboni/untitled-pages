@@ -511,6 +511,7 @@ mkhtml() {
 	# as one argument, when it is actually two.
 	# Same for $TITLE
 	pandoc -V lang=${PAGELANGUAGE} -V dir=${PDIR} $TOC $SMART "$TMPFILE" \
+		--preserve-tabs --tab-stop 8 \
 		-V antisocialurl="${HTMLLINK}" -s ${CSS} ${CSSOVERRIDE} ${TITLE} \
 		--template ${TEMPLATE} --metadata return="" > "$FILE.html"
 
