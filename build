@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #
+# Copyright (C) 2023 Leonardo Zamboni 
 # Copyright (C) 2017,2021 Leah Rowe <info@minifree.org>
 # Copyright (C) 2017 Alyssa Rosenzweig <alyssa@rosenzweig.io>
 # Copyright (C) 2017 Michael Reed <michael@michaelreed.io>
@@ -823,12 +824,19 @@ buildsite() {
 		printf "this website has not been changed. skipping.\n"
 	fi
 
-	mkdir -p result
-	cp $SITEDIR/*.html $SITEDIR/*.xml $SITEDIR/*.css $SITEDIR/license.md result/
+	OUTPUTDIR="$(getConfigValue "${SITEDIR}/site.cfg" "OUTPUTDIR")"
+
+	if [ -n "$OUTPUTDIR" ]; then
+		printf "untitled error: OUTPUTDIR not defined in site.cfg.\n"
+		exit 1
+	fi
+
+	mkdir -p $OUTPUTDIR
+	cp $SITEDIR/*.html $SITEDIR/*.xml $SITEDIR/*.css $SITEDIR/license.md $OUTPUTDIR/
 
 	if [ $BLOGDIR != "" ]; then
-		mkdir -p result/$BLOGDIR
-		cp $SITEDIR/*.css $SITEDIR/$BLOGDIR*.html $SITEDIR/$BLOGDIR*.xml result/$BLOGDIR
+		mkdir -p $OUTPUTDIR/$BLOGDIR
+		cp $SITEDIR/*.css $SITEDIR/$BLOGDIR*.html $SITEDIR/$BLOGDIR*.xml $OUTPUTDIR/$BLOGDIR
 	fi
 	./clean
 }
