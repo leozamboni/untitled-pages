@@ -826,7 +826,7 @@ buildsite() {
 
 	OUTPUTDIR="$(getConfigValue "${SITEDIR}/site.cfg" "OUTPUTDIR")"
 
-	if [ -n "$OUTPUTDIR" ]; then
+	if [ -z ${OUTPUTDIR+x} ]; then
 		printf "untitled error: OUTPUTDIR not defined in site.cfg.\n"
 		exit 1
 	fi
@@ -834,7 +834,7 @@ buildsite() {
 	mkdir -p $OUTPUTDIR
 	cp $SITEDIR/*.html $SITEDIR/*.xml $SITEDIR/*.css $SITEDIR/license.md $OUTPUTDIR/
 
-	if [ $BLOGDIR != "" ]; then
+	if [[ $BLOGDIR != "" ]]; then
 		mkdir -p $OUTPUTDIR/$BLOGDIR
 		cp $SITEDIR/*.css $SITEDIR/$BLOGDIR*.html $SITEDIR/$BLOGDIR*.xml $OUTPUTDIR/$BLOGDIR
 	fi
